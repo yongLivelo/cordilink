@@ -29,20 +29,22 @@ export default function RootLayout() {
             name="index"
             options={{ drawerLabel: "Home", title: "Overview" }}
           />
+
+          <Drawer.Screen
+            name="screens/submit-issue/index"
+            options={{ drawerLabel: "Submit Issue", title: "Submit Issue" }}
+          />
+          <Drawer.Screen
+            name="screens/my-reports/index"
+            options={{ drawerLabel: "My Reports", title: "My Reports" }}
+          />
+
           <Drawer.Screen
             name="screens/community-board/index"
             options={{
               drawerLabel: "Community Board",
               title: "Community Board",
             }}
-          />
-          <Drawer.Screen
-            name="screens/my-reports/index"
-            options={{ drawerLabel: "My Reports", title: "My Reports" }}
-          />
-          <Drawer.Screen
-            name="screens/submit-issue/index"
-            options={{ drawerLabel: "Submit Issue", title: "Submit Issue" }}
           />
         </Drawer>
       </PaperProvider>
