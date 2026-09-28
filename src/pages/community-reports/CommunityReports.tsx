@@ -1,7 +1,7 @@
 import { Stack, Loader, Center } from "@mantine/core";
 import { useEffect, useState } from "react";
 import type { CommunityReport } from "@/types/report";
-import ReportCard from "@/pages/my-reports/components/ReportCard";
+import ReportCard from "@/components/ReportCard";
 
 const MOCK_COMMUNITY_REPORTS: CommunityReport[] = [
   {

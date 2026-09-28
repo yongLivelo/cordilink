@@ -1,13 +1,13 @@
 import { Stack, Loader, Center } from "@mantine/core";
 import { useEffect, useState } from "react";
 import type { MyReport } from "@/types/report";
-import ReportCard from "@/pages/my-reports/components/ReportCard";
+import ReportCard from "@/components/ReportCard";
 
 const MOCK_REPORTS: MyReport[] = [
   {
     type: "my-report",
     report: {
-      report: "Broken Streetlight on 5th", // 👈 Added title
+      report: "Broken Streetlight on 5th",
       image: "https://placehold.co/400x300?text=Broken+Streetlight",
       description:
         "The streetlight has been flickering for three days, creating a hazard at night.",
@@ -20,7 +20,7 @@ const MOCK_REPORTS: MyReport[] = [
   {
     type: "my-report",
     report: {
-      report: "Large Pothole near Park", // 👈 Added title
+      report: "Large Pothole near Park",
       image: "https://placehold.co/400x300?text=Pothole",
       description:
         "Large pothole in the right lane. Needs immediate filling before winter.",
@@ -32,7 +32,7 @@ const MOCK_REPORTS: MyReport[] = [
   {
     type: "my-report",
     report: {
-      report: "Library Vandalism", // 👈 Added title
+      report: "Library Vandalism",
       image: "https://placehold.co/400x300?text=Graffiti",
       description: "Vandalism on the east wall of the library building.",
       category: "Vandalism",
