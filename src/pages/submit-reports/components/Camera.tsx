@@ -1,16 +1,26 @@
-import { Box, Button, Image, Stack, Text } from "@mantine/core";
+import { Box, Button, Group, Image, Stack, Text } from "@mantine/core";
 import { useCallback, useRef, useState } from "react";
 import Webcam from "react-webcam";
 
-export default function Camera() {
+interface CameraProps {
+  onCapture: (base64Image: string) => void;
+  onRetake: () => void;
+}
+export default function Camera({ onCapture, onRetake }: CameraProps) {
   const webcamRef = useRef<Webcam>(null);
   const [imageSrc, setImageSrc] = useState<null | string>(null);
   const [cameraError, setCameraError] = useState<null | string>(null);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+
+  const toggleCamera = () => {
+    setFacingMode((prevMode) => (prevMode === "user" ? "environment" : "user"));
+  };
 
   const capture = useCallback(() => {
     const image = webcamRef.current?.getScreenshot();
     if (!image) return;
     setImageSrc(image);
+    onCapture(image);
   }, []);
 
   return (
@@ -33,6 +43,7 @@ export default function Camera() {
             <Webcam
               audio={false}
               ref={webcamRef}
+              videoConstraints={{ facingMode }}
               screenshotFormat="image/jpeg"
               screenshotQuality={0.4}
               style={{
@@ -66,11 +77,15 @@ export default function Camera() {
       {!cameraError && (
         <>
           {!imageSrc ? (
-            <Button onClick={capture}>Take Photo</Button>
+            <Group>
+              <Button onClick={capture}>Take Photo</Button>
+              <Button onClick={toggleCamera}>Flip Camera</Button>
+            </Group>
           ) : (
             <Button
               onClick={() => {
                 setImageSrc(null);
+                onRetake();
               }}
               color="red"
             >
