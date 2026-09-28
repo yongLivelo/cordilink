@@ -1,3 +1,10 @@
+import { Stack, Text } from "@mantine/core";
+
 export default function Home() {
-  return <div>Cordilink</div>;
+  return (
+    <Stack>
+      <Text size="lg">CordiLink</Text>
+      <Text>Welcome</Text>
+    </Stack>
+  );
 }
