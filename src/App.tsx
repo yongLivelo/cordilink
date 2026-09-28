@@ -11,7 +11,7 @@ import { Suspense } from "react";
 
 export default function App() {
   return (
-    <MantineProvider>
+    <MantineProvider defaultColorScheme="dark">
       <Suspense>
         <BrowserRouter>
           <Layout>
