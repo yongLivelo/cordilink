@@ -17,9 +17,10 @@ export default function Navbar({
         label="Home"
         active={location.pathname === "/"}
       />
-      {links.map((link) => {
+      {links.map((link, index) => {
         return (
           <NavLink
+            key={index}
             component={Link}
             onClick={closeOnMobile}
             to={`\\${link}`}

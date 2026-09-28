@@ -1,5 +1,5 @@
 import Navbar from "@/layout/components/navbar";
-import { AppShell, Burger } from "@mantine/core";
+import { AppShell, Burger, Group } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import type { ReactElement } from "react";
 
@@ -21,7 +21,9 @@ export default function Layout({ children }: { children: ReactElement }) {
       }}
     >
       <AppShell.Header>
-        <Burger opened={opened} onClick={toggle} size="sm" />
+        <Group p="md" h={"100%"} align="center">
+          <Burger opened={opened} onClick={toggle} size="sm" />
+        </Group>
       </AppShell.Header>
 
       <AppShell.Navbar>
