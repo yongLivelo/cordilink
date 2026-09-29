@@ -1,15 +1,30 @@
 import type { MyReport, CommunityReport } from "@/types/report";
-import { Card, Image, Text, Group, Badge, Stack, Button } from "@mantine/core";
+import {
+  Card,
+  Image,
+  Text,
+  Group,
+  Badge,
+  Stack,
+  Button,
+  Anchor,
+} from "@mantine/core";
 import { useState } from "react";
 
 interface ReportCardProps {
   report: MyReport | CommunityReport;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-export default function ReportCard({ report }: ReportCardProps) {
+export default function ReportCard({
+  report,
+  onEdit,
+  onDelete,
+}: ReportCardProps) {
   const {
-    report: title,
-    image,
+    title,
+    image_url: image,
     description,
     category,
     location,
@@ -22,7 +37,7 @@ export default function ReportCard({ report }: ReportCardProps) {
     isCommunity ? report.vote : "none",
   );
 
-  const statusColors = {
+  const statusColors: Record<string, string> = {
     pending: "orange",
     "in-progress": "blue",
     resolved: "green",
@@ -41,7 +56,7 @@ export default function ReportCard({ report }: ReportCardProps) {
 
       <Group justify="space-between" mt="md" mb="xs">
         <Text fw={700}>{title}</Text>
-        <Badge color={statusColors[status]} variant="light">
+        <Badge color={statusColors[status] || "gray"} variant="light">
           {status}
         </Badge>
       </Group>
@@ -57,7 +72,7 @@ export default function ReportCard({ report }: ReportCardProps) {
 
         {connectedTo && (
           <Text size="xs" c="gray">
-            Linked to: {connectedTo}
+            Linked to: <Anchor>{connectedTo}</Anchor>
           </Text>
         )}
       </Stack>
@@ -95,6 +110,23 @@ export default function ReportCard({ report }: ReportCardProps) {
               Downvote
             </Button>
           </Group>
+        </Group>
+      )}
+
+      {/* Personal Actions: Edit / Delete */}
+      {!isCommunity && (
+        <Group
+          justify="flex-end"
+          mt="md"
+          pt="md"
+          style={{ borderTop: "1px solid #eee" }}
+        >
+          <Button size="xs" variant="light" color="blue" onClick={onEdit}>
+            Edit
+          </Button>
+          <Button size="xs" variant="light" color="red" onClick={onDelete}>
+            Delete
+          </Button>
         </Group>
       )}
     </Card>

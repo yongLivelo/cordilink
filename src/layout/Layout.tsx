@@ -1,9 +1,9 @@
 import Navbar from "@/layout/components/navbar";
 import { AppShell, Burger, Group } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import type { ReactElement } from "react";
+import { Outlet } from "react-router";
 
-export default function Layout({ children }: { children: ReactElement }) {
+export default function Layout() {
   const [opened, { toggle }] = useDisclosure();
   const closeOnMobile = () => {
     if (window.innerWidth < 768) {
@@ -30,7 +30,9 @@ export default function Layout({ children }: { children: ReactElement }) {
         <Navbar closeOnMobile={closeOnMobile} />
       </AppShell.Navbar>
 
-      <AppShell.Main>{children}</AppShell.Main>
+      <AppShell.Main>
+        <Outlet />
+      </AppShell.Main>
     </AppShell>
   );
 }

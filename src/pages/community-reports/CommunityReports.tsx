@@ -5,10 +5,11 @@ import ReportCard from "@/components/ReportCard";
 
 const MOCK_COMMUNITY_REPORTS: CommunityReport[] = [
   {
+    id: 1,
     type: "community-report",
     report: {
-      report: "Broken Streetlight on 5th",
-      image: "https://placehold.co/400x300?text=Broken+Streetlight",
+      title: "Broken Streetlight on 5th",
+      image_url: "https://placehold.co/400x300?text=Broken+Streetlight",
       description:
         "The streetlight has been flickering for three days, creating a hazard at night.",
       category: "Infrastructure",
@@ -19,10 +20,11 @@ const MOCK_COMMUNITY_REPORTS: CommunityReport[] = [
     vote: "up",
   },
   {
+    id: 1,
     type: "community-report",
     report: {
-      report: "Large Pothole",
-      image: "https://placehold.co/400x300?text=Pothole",
+      title: "Large Pothole",
+      image_url: "https://placehold.co/400x300?text=Pothole",
       description:
         "Large pothole in the right lane. Needs immediate filling before winter.",
       category: "Road Hazard",
@@ -32,10 +34,11 @@ const MOCK_COMMUNITY_REPORTS: CommunityReport[] = [
     vote: "none",
   },
   {
+    id: 1,
     type: "community-report",
     report: {
-      report: "Library Graffiti",
-      image: "https://placehold.co/400x300?text=Graffiti",
+      title: "Library Graffiti",
+      image_url: "https://placehold.co/400x300?text=Graffiti",
       description: "Vandalism on the east wall of the library building.",
       category: "Vandalism",
       location: "Downtown Library",

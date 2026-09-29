@@ -1,6 +1,6 @@
 export type Report = {
-  report: string;
-  image: string;
+  title: string;
+  image_url: string;
   description: string;
   category: string;
   location: string;
@@ -8,12 +8,14 @@ export type Report = {
 };
 
 export type MyReport = {
+  id: number;
   type: "my-report";
   report: Report;
   connectedTo?: string;
 };
 
 export type CommunityReport = {
+  id: number;
   type: "community-report";
   report: Report;
   connectedTo?: string;

@@ -1,30 +1,33 @@
 import Camera from "@/pages/submit-reports/components/Camera";
-import { Button, NativeSelect, Stack, Textarea } from "@mantine/core";
-import { useForm } from "@mantine/form";
+import { Button, Stack, Textarea } from "@mantine/core";
+import { schemaResolver, useForm } from "@mantine/form";
 import { supabase } from "@/lib/supabaseClient";
 import { useState } from "react";
-
+import { z } from "zod/v4";
+const schema = z.object({
+  image: z.string().min(2, { error: "You must take an image" }),
+  description: z
+    .string()
+    .min(5, { error: "You must have atleast 5 characters" }),
+});
 export default function SubmitReports() {
   const [loading, setLoading] = useState(false);
 
   const form = useForm({
+    mode: "uncontrolled",
     initialValues: {
       image: null as string | null,
       description: "",
-      category: "Road",
     },
-    validate: {
-      description: (value: string) =>
-        value.length < 5 ? "Description must be at least 5 characters" : null,
-      image: (value: string | null) =>
-        !value ? "Please capture a photo of the incident" : null,
-    },
+    validate: schemaResolver(schema, { sync: true }),
   });
 
   const handleSubmit = async (values: typeof form.values) => {
     if (!values.image) return;
     setLoading(true);
-
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     try {
       const base64Clean = values.image.replace(/^data:image\/\w+;base64,/, "");
       const arrayBuffer = Uint8Array.from(atob(base64Clean), (c) =>
@@ -33,7 +36,7 @@ export default function SubmitReports() {
       const fileName = `${Date.now()}.png`;
 
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("reports-images")
+        .from("report_images")
         .upload(fileName, arrayBuffer, {
           contentType: "image/png",
           upsert: false,
@@ -42,16 +45,19 @@ export default function SubmitReports() {
       if (uploadError) throw uploadError;
 
       const { data: publicUrlData } = supabase.storage
-        .from("reports-images")
+        .from("report_images")
         .getPublicUrl(uploadData.path);
 
       const imageUrl = publicUrlData.publicUrl;
 
       const { error: dbError } = await supabase.from("reports").insert([
         {
+          title: "Title Here",
+          location: "Location Here",
+          category: "road_hazard",
           description: values.description,
-          category: values.category,
           image_url: imageUrl,
+          user_id: user?.id,
         },
       ]);
 
@@ -81,15 +87,11 @@ export default function SubmitReports() {
 
         <Textarea
           label="Description"
-          description="Description of incident"
-          placeholder="Input Description"
+          description="Include specific facts: what exactly happened, and any visible damage or immediate actions taken."
+          placeholder="e.g., I noticed a severe water leak coming from the ceiling pipe near the main entrance..."
+          minRows={4}
+          autosize
           {...form.getInputProps("description")}
-        />
-
-        <NativeSelect
-          label="Type of incident"
-          data={["Road", "Others"]}
-          {...form.getInputProps("category")}
         />
 
         <Button type="submit" loading={loading}>
