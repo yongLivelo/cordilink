@@ -113,7 +113,6 @@ export default function ReportCard({
         </Group>
       )}
 
-      {/* Personal Actions: Edit / Delete */}
       {!isCommunity && (
         <Group
           justify="flex-end"
