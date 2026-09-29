@@ -5,10 +5,11 @@ import ReportCard from "@/components/ReportCard";
 
 const MOCK_REPORTS: MyReport[] = [
   {
+    id: 1,
     type: "my-report",
     report: {
-      report: "Broken Streetlight on 5th",
-      image: "https://placehold.co/400x300?text=Broken+Streetlight",
+      title: "Broken Streetlight on 5th",
+      image_url: "https://placehold.co/400x300?text=Broken+Streetlight",
       description:
         "The streetlight has been flickering for three days, creating a hazard at night.",
       category: "Infrastructure",
@@ -18,10 +19,11 @@ const MOCK_REPORTS: MyReport[] = [
     connectedTo: "ticket-8821",
   },
   {
+    id: 2,
     type: "my-report",
     report: {
-      report: "Large Pothole near Park",
-      image: "https://placehold.co/400x300?text=Pothole",
+      title: "Large Pothole near Park",
+      image_url: "https://placehold.co/400x300?text=Pothole",
       description:
         "Large pothole in the right lane. Needs immediate filling before winter.",
       category: "Road Hazard",
@@ -30,10 +32,11 @@ const MOCK_REPORTS: MyReport[] = [
     },
   },
   {
+    id: 3,
     type: "my-report",
     report: {
-      report: "Library Vandalism",
-      image: "https://placehold.co/400x300?text=Graffiti",
+      title: "Library Vandalism",
+      image_url: "https://placehold.co/400x300?text=Graffiti",
       description: "Vandalism on the east wall of the library building.",
       category: "Vandalism",
       location: "Downtown Library",
@@ -50,13 +53,10 @@ export default function MyReports() {
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
       setMyReports(MOCK_REPORTS);
       setIsLoading(false);
     };
-
     fetchData();
   }, []);
 
