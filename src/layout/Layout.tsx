@@ -1,6 +1,7 @@
 import Navbar from "@/layout/components/navbar";
 import { AppShell, Burger, Group } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import { useEffect } from "react";
 import { Outlet } from "react-router";
 
 export default function Layout() {
@@ -10,6 +11,7 @@ export default function Layout() {
       toggle();
     }
   };
+  useEffect(() => {}, []);
   return (
     <AppShell
       padding="md"

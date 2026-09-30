@@ -1,3 +1,4 @@
+import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { Button, NavLink, Stack, Modal, Group, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
@@ -12,8 +13,12 @@ export default function Navbar({
   const location = useLocation();
   const [loading, setLoading] = useState<boolean>(false);
   const [opened, { open, close }] = useDisclosure(false);
-  const links = ["submit-reports", "my-reports", "community-reports"];
+  const links = {
+    user: ["submit-reports", "my-reports", "community-reports"],
+    admin: ["dashboard"],
+  };
 
+  const { role } = useAuth();
   const handleLogout = async () => {
     setLoading(true);
     await supabase.auth.signOut();
@@ -44,21 +49,25 @@ export default function Navbar({
             label="Home"
             active={location.pathname === "/"}
           />
-          {links.map((link, index) => {
-            return (
-              <NavLink
-                key={index}
-                component={Link}
-                onClick={closeOnMobile}
-                to={`/${link}`}
-                label={link
-                  .split("-")
-                  .map((text) => text.charAt(0).toUpperCase() + text.slice(1))
-                  .join(" ")}
-                active={location.pathname === `/${link}`}
-              />
-            );
-          })}
+          {role &&
+            links[role].map((link, index) => {
+              return (
+                <NavLink
+                  key={index}
+                  component={Link}
+                  onClick={closeOnMobile}
+                  to={`/${link}`}
+                  label={link
+                    .split("-")
+                    .map(
+                      (text: string) =>
+                        text.charAt(0).toUpperCase() + text.slice(1),
+                    )
+                    .join(" ")}
+                  active={location.pathname === `/${link}`}
+                />
+              );
+            })}
         </Group>
 
         <Group px="md" mt="auto">
