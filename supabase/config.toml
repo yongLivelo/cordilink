@@ -117,11 +117,11 @@ enabled = true
 file_size_limit = "50MiB"
 
 # Uncomment to configure local storage buckets
-# [storage.buckets.images]
+# [storage.buckets.files]
 # public = false
 # file_size_limit = "50MiB"
 # allowed_mime_types = ["image/png", "image/jpeg"]
-# objects_path = "./images"
+# objects_path = "./files"
 
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]
@@ -152,6 +152,8 @@ max_indexes = 5
 # [storage.vector.buckets.documents-openai]
 
 [auth]
+confirm_email = false
+
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
