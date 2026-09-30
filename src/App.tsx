@@ -12,7 +12,7 @@ import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import ProctedRoute from "@/components/ProctedRoute";
 import AuthProvider from "@/context/AuthContext";
-
+import Dashboard from "@/pages/dashboard";
 export default function App() {
   return (
     <AuthProvider>
@@ -20,20 +20,31 @@ export default function App() {
         <Suspense>
           <BrowserRouter>
             <Routes>
-              <Route path="/login" element={<Login />} />
+              <Route index path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
 
-              {/* 1. Auth check runs first */}
-              <Route element={<ProctedRoute />}>
-                {/* 2. Layout is applied to all children of this route */}
+              <Route
+                element={<ProctedRoute allowedRoles={["user", "admin"]} />}
+              >
                 <Route element={<Layout />}>
                   <Route path="/" element={<Home />} />
+                </Route>
+              </Route>
+
+              <Route element={<ProctedRoute allowedRoles={["user"]} />}>
+                <Route element={<Layout />}>
                   <Route path="/submit-reports" element={<SubmitReport />} />
                   <Route path="/my-reports" element={<MyReports />} />
                   <Route
                     path="/community-reports"
                     element={<CommunityReports />}
                   />
+                </Route>
+              </Route>
+
+              <Route element={<ProctedRoute allowedRoles={["admin"]} />}>
+                <Route element={<Layout />}>
+                  <Route path="/dashboard" element={<Dashboard />} />
                 </Route>
               </Route>
             </Routes>
