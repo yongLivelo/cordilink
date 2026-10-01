@@ -11,7 +11,7 @@ export default function ProctedRoute({ allowedRoles }: ProtectedRouteProps) {
   if (loading) {
     return <Loader color="blue" />;
   }
-  if (allowedRoles && role && !allowedRoles.includes(role)) {
+  if (allowedRoles && !allowedRoles.includes(role)) {
     return <Navigate to="/" replace />;
   }
   return session ? <Outlet /> : <Navigate to="/login" />;

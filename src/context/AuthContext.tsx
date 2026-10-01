@@ -19,20 +19,16 @@ export default function AuthProvider({
   const [role, setRole] = useState<Role | null>(null);
   const fetchRole = async (session: Session | null) => {
     if (session?.user) {
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .single();
-        if (error) throw error;
-        setRole(data.role);
-      } catch (err) {
-        console.error("Failed to get role: ", err);
-        setRole(null);
-      } finally {
-        setLoading(false);
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .maybeSingle();
+      if (error) {
+        console.error("Failed to get role: ", error);
       }
+      setRole(data?.role ?? null);
+      setLoading(false);
     } else {
       setRole(null);
       setLoading(false);
@@ -48,7 +44,6 @@ export default function AuthProvider({
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      console.log(session);
       fetchRole(session);
     });
 

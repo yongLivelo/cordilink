@@ -49,25 +49,24 @@ export default function Navbar({
             label="Home"
             active={location.pathname === "/"}
           />
-          {role &&
-            links[role].map((link, index) => {
-              return (
-                <NavLink
-                  key={index}
-                  component={Link}
-                  onClick={closeOnMobile}
-                  to={`/${link}`}
-                  label={link
-                    .split("-")
-                    .map(
-                      (text: string) =>
-                        text.charAt(0).toUpperCase() + text.slice(1),
-                    )
-                    .join(" ")}
-                  active={location.pathname === `/${link}`}
-                />
-              );
-            })}
+          {links[role ?? "user"].map((link, index) => {
+            return (
+              <NavLink
+                key={index}
+                component={Link}
+                onClick={closeOnMobile}
+                to={`/${link}`}
+                label={link
+                  .split("-")
+                  .map(
+                    (text: string) =>
+                      text.charAt(0).toUpperCase() + text.slice(1),
+                  )
+                  .join(" ")}
+                active={location.pathname === `/${link}`}
+              />
+            );
+          })}
         </Group>
 
         <Group px="md" mt="auto">
