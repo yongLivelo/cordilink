@@ -23,15 +23,13 @@ export default function App() {
               <Route index path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
 
-              <Route
-                element={<ProctedRoute allowedRoles={["user", "admin"]} />}
-              >
+              <Route element={<ProctedRoute allowedRoles={[null, "admin"]} />}>
                 <Route element={<Layout />}>
                   <Route path="/" element={<Home />} />
                 </Route>
               </Route>
 
-              <Route element={<ProctedRoute allowedRoles={["user"]} />}>
+              <Route element={<ProctedRoute allowedRoles={[null]} />}>
                 <Route element={<Layout />}>
                   <Route path="/submit-reports" element={<SubmitReport />} />
                   <Route path="/my-reports" element={<MyReports />} />
