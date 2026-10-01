@@ -1,6 +1,14 @@
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
-import { Button, NavLink, Stack, Modal, Group, Text } from "@mantine/core";
+import {
+  Button,
+  NavLink,
+  Stack,
+  Modal,
+  Group,
+  Text,
+  Avatar,
+} from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useState } from "react";
 import { Link, useLocation } from "react-router";
@@ -18,7 +26,7 @@ export default function Navbar({
     admin: ["dashboard"],
   };
 
-  const { role } = useAuth();
+  const { session, role } = useAuth();
   const handleLogout = async () => {
     setLoading(true);
     await supabase.auth.signOut();
@@ -41,39 +49,43 @@ export default function Navbar({
       </Modal>
 
       <Stack justify="space-around">
-        <Group>
-          <NavLink
-            component={Link}
-            onClick={closeOnMobile}
-            to="/"
-            label="Home"
-            active={location.pathname === "/"}
-          />
-          {links[role ?? "user"].map((link, index) => {
-            return (
-              <NavLink
-                key={index}
-                component={Link}
-                onClick={closeOnMobile}
-                to={`/${link}`}
-                label={link
-                  .split("-")
-                  .map(
-                    (text: string) =>
-                      text.charAt(0).toUpperCase() + text.slice(1),
-                  )
-                  .join(" ")}
-                active={location.pathname === `/${link}`}
-              />
-            );
-          })}
-        </Group>
+        <NavLink
+          component={Link}
+          onClick={closeOnMobile}
+          to="/"
+          label="Home"
+          active={location.pathname === "/"}
+        />
+        {links[role ?? "user"].map((link, index) => {
+          return (
+            <NavLink
+              key={index}
+              component={Link}
+              onClick={closeOnMobile}
+              to={`/${link}`}
+              label={link
+                .split("-")
+                .map(
+                  (text: string) =>
+                    text.charAt(0).toUpperCase() + text.slice(1),
+                )
+                .join(" ")}
+              active={location.pathname === `/${link}`}
+            />
+          );
+        })}
 
-        <Group px="md" mt="auto">
+        <Stack p="xs" mt="xl">
+          <Group>
+            <Avatar
+              name={session?.user.email?.slice(0, 2).toUpperCase() ?? "?"}
+            />
+            <Text>{session?.user.email}</Text>
+          </Group>
           <Button onClick={open} color="red" variant="light" radius="md">
             Logout
           </Button>
-        </Group>
+        </Stack>
       </Stack>
     </>
   );
