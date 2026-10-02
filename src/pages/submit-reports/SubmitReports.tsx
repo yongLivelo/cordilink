@@ -50,6 +50,13 @@ export default function SubmitReports() {
 
       const imageUrl = publicUrlData.publicUrl;
 
+      const { data, error } = await supabase.functions.invoke(
+        "ai-categorizer",
+        {
+          body: { name: "Functions" },
+        },
+      );
+      console.log(data, error);
       const { error: dbError } = await supabase.from("reports").insert([
         {
           title: "Title Here",
