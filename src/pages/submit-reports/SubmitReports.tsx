@@ -12,6 +12,7 @@ const schema = z.object({
 });
 export default function SubmitReports() {
   const [loading, setLoading] = useState(false);
+  const [cameraResetKey, setCameraResetKey] = useState(0);
 
   const form = useForm({
     mode: "uncontrolled",
@@ -25,9 +26,20 @@ export default function SubmitReports() {
   const handleSubmit = async (values: typeof form.values) => {
     if (!values.image) return;
     setLoading(true);
+
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser();
+
+    // user_id is NOT NULL, so a missing session must fail here rather than
+    // reaching the insert as an undefined -> null value.
+    if (authError || !user) {
+      setLoading(false);
+      alert("You must be signed in to submit a report.");
+      return;
+    }
+
     try {
       const base64Clean = values.image.replace(/^data:image\/\w+;base64,/, "");
       const arrayBuffer = Uint8Array.from(atob(base64Clean), (c) =>
@@ -50,21 +62,27 @@ export default function SubmitReports() {
 
       const imageUrl = publicUrlData.publicUrl;
 
-      const { data, error } = await supabase.functions.invoke(
+      const { data: aiData, error: aiError } = await supabase.functions.invoke(
         "ai-categorizer",
         {
-          body: { name: "Functions" },
+          body: {
+            // text: values.description,
+            image: base64Clean,
+          },
         },
       );
-      console.log(data, error);
+
+      if (aiError)
+        throw new Error(`AI categorization failed: ${aiError.message}`);
+
       const { error: dbError } = await supabase.from("reports").insert([
         {
           title: "Title Here",
           location: "Location Here",
-          category: "road_hazard",
+          category: aiData.category ?? "other",
           description: values.description,
           image_url: imageUrl,
-          user_id: user?.id,
+          user_id: user.id,
         },
       ]);
 
@@ -72,6 +90,7 @@ export default function SubmitReports() {
 
       alert("Report and image submitted successfully!");
       form.reset();
+      setCameraResetKey((key) => key + 1);
     } catch (error: any) {
       console.error("Error submitting report:", error.message);
       alert(`Failed to submit: ${error.message}`);
@@ -90,6 +109,7 @@ export default function SubmitReports() {
           onRetake={() => {
             form.setFieldValue("image", null);
           }}
+          resetKey={cameraResetKey}
         />
 
         <Textarea

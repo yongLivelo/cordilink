@@ -1,16 +1,21 @@
 import { Box, Button, Group, Image, Stack, Text } from "@mantine/core";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Webcam from "react-webcam";
 
 interface CameraProps {
   onCapture: (base64Image: string) => void;
   onRetake: () => void;
+  resetKey: number;
 }
-export default function Camera({ onCapture, onRetake }: CameraProps) {
+export default function Camera({ onCapture, onRetake, resetKey }: CameraProps) {
   const webcamRef = useRef<Webcam>(null);
   const [imageSrc, setImageSrc] = useState<null | string>(null);
   const [cameraError, setCameraError] = useState<null | string>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+
+  useEffect(() => {
+    setImageSrc(null);
+  }, [resetKey]);
 
   const toggleCamera = () => {
     setFacingMode((prevMode) => (prevMode === "user" ? "environment" : "user"));
