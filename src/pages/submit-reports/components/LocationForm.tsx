@@ -1,72 +1,34 @@
-import { Select, Stack, Text, TextInput } from "@mantine/core";
+import { Loader, Select, Stack, Text, TextInput } from "@mantine/core";
+import { useBarangays, useCities } from "./usePsgc";
+import type {
+  ManualLocationErrors,
+  ManualLocationValue,
+} from "./LocationSchema";
 
-/* ---------- Types (move to src/types/report.ts if you prefer) ---------- */
-
-export type GpsLocation = {
-  source: "gps";
-  latitude: number;
-  longitude: number;
-  /** Accuracy radius in meters, as reported by the browser */
-  accuracy: number;
-};
-
-export type ManualLocationValue = {
-  city: string | null;
-  barangay: string | null;
-  street: string;
-};
-
-export type ReportLocation =
-  | GpsLocation
-  | {
-      source: "manual";
-      city: string;
-      barangay: string | null;
-      street: string | null;
-    };
-
-export const EMPTY_MANUAL_LOCATION: ManualLocationValue = {
-  city: null,
-  barangay: null,
-  street: "",
-};
-
-/* ---------- Dropdown data ----------
- * PLACEHOLDER DATA: a short sample so the dropdowns work.
- * Replace with the full list (e.g. from PSGC data or your own table).
- */
-const LOCATIONS: Record<string, string[]> = {
-  "Baguio City": [
-    "Aurora Hill",
-    "Burnham-Legarda",
-    "Camp 7",
-    "Engineers' Hill",
-    "Irisan",
-    "Kayang-Hilltop",
-    "Loakan Proper",
-    "Magsaysay",
-    "Pacdal",
-    "Quirino Hill",
-  ],
-  "La Trinidad": ["Alno", "Balili", "Betag", "Pico", "Wangal"],
-};
-
-const CITY_OPTIONS = Object.keys(LOCATIONS);
-
-/* ---------- Component ---------- */
+/* Types and validation live in ./locationSchema; re-exported for convenience. */
+export {
+  EMPTY_MANUAL_LOCATION,
+  type GpsLocation,
+  type ManualLocationValue,
+  type ReportLocation,
+} from "./LocationSchema";
 
 interface LocationFormProps {
   value: ManualLocationValue;
   onChange: (value: ManualLocationValue) => void;
+  /** Validation messages from `getManualLocationErrors`. */
+  errors?: ManualLocationErrors;
   disabled?: boolean;
 }
 
 export default function LocationForm({
   value,
   onChange,
+  errors = {},
   disabled = false,
 }: LocationFormProps) {
-  const barangayOptions = value.city ? (LOCATIONS[value.city] ?? []) : [];
+  const cities = useCities();
+  const barangays = useBarangays(value.cityCode);
 
   return (
     <Stack gap="xs">
@@ -77,10 +39,20 @@ export default function LocationForm({
       <Select
         label="City / Municipality"
         placeholder="Select city or municipality"
-        data={CITY_OPTIONS}
-        value={value.city}
-        // Changing the city clears the barangay, since the lists differ.
-        onChange={(city) => onChange({ ...value, city, barangay: null })}
+        data={cities.options}
+        value={value.cityCode}
+        onChange={(cityCode, option) =>
+          // Changing the city clears the barangay, since the lists differ.
+          onChange({
+            ...value,
+            cityCode,
+            city: option?.label ?? null,
+            barangayCode: null,
+            barangay: null,
+          })
+        }
+        error={errors.city ?? cities.error}
+        rightSection={cities.loading ? <Loader size="xs" /> : undefined}
         searchable
         clearable
         disabled={disabled}
@@ -89,14 +61,22 @@ export default function LocationForm({
       <Select
         label="Barangay"
         placeholder={
-          value.city ? "Select barangay" : "Select a city or municipality first"
+          value.cityCode ? "Select barangay" : "Select a city or municipality first"
         }
-        data={barangayOptions}
-        value={value.barangay}
-        onChange={(barangay) => onChange({ ...value, barangay })}
+        data={barangays.options}
+        value={value.barangayCode}
+        onChange={(barangayCode, option) =>
+          onChange({
+            ...value,
+            barangayCode,
+            barangay: option?.label ?? null,
+          })
+        }
+        error={errors.barangay ?? barangays.error}
+        rightSection={barangays.loading ? <Loader size="xs" /> : undefined}
         searchable
         clearable
-        disabled={disabled || !value.city}
+        disabled={disabled || !value.cityCode}
       />
 
       <TextInput
@@ -106,7 +86,8 @@ export default function LocationForm({
         onChange={(event) =>
           onChange({ ...value, street: event.currentTarget.value })
         }
-        disabled={disabled || !value.city}
+        error={errors.street}
+        disabled={disabled || !value.cityCode}
       />
     </Stack>
   );

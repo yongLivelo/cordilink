@@ -1,10 +1,14 @@
 import Camera from "@/pages/submit-reports/components/Camera";
-import LocationForm, {
+import LocationForm from "@/pages/submit-reports/components/LocationForm";
+import {
   EMPTY_MANUAL_LOCATION,
+  getManualLocationErrors,
+  reportLocationSchema,
   type GpsLocation,
+  type ManualLocationErrors,
   type ManualLocationValue,
   type ReportLocation,
-} from "@/pages/submit-reports/components/LocationForm";
+} from "@/pages/submit-reports/components/LocationSchema";
 import { Alert, Button, Group, Stack, Text, Textarea } from "@mantine/core";
 import { schemaResolver, useForm } from "@mantine/form";
 import { supabase } from "@/lib/supabaseClient";
@@ -61,6 +65,7 @@ export default function SubmitReports() {
   const [manual, setManual] = useState<ManualLocationValue>(
     EMPTY_MANUAL_LOCATION,
   );
+  const [manualErrors, setManualErrors] = useState<ManualLocationErrors>({});
 
   const form = useForm({
     mode: "uncontrolled",
@@ -132,10 +137,12 @@ export default function SubmitReports() {
 
   const buildLocation = (): ReportLocation | null => {
     if (gps) return gps;
-    if (manual.city) {
+    if (manual.cityCode && manual.city) {
       return {
         source: "manual",
+        cityCode: manual.cityCode,
         city: manual.city,
+        barangayCode: manual.barangayCode,
         barangay: manual.barangay,
         street: manual.street.trim() || null,
       };
@@ -145,6 +152,19 @@ export default function SubmitReports() {
 
   const handleSubmit = async (values: typeof form.values) => {
     if (!values.image) return;
+
+    // Location is optional, but if one is provided it must be valid.
+    if (!gps) {
+      const errors = getManualLocationErrors(manual);
+      setManualErrors(errors);
+      if (Object.keys(errors).length > 0) return;
+    }
+    const location = buildLocation();
+    if (location && !reportLocationSchema.safeParse(location).success) {
+      setGpsError("The location looks invalid. Please try again.");
+      return;
+    }
+
     setLoading(true);
     const {
       data: { user },
@@ -170,7 +190,6 @@ export default function SubmitReports() {
         .getPublicUrl(uploadData.path);
 
       const imageUrl = publicUrlData.publicUrl;
-      const location = buildLocation();
 
       // `.select("id").single()` returns the new row so we can attach the location.
       const { data: inserted, error: dbError } = await supabase
@@ -199,6 +218,7 @@ export default function SubmitReports() {
       form.reset();
       setGps(null);
       setManual(EMPTY_MANUAL_LOCATION);
+      setManualErrors({});
     } catch (error: any) {
       console.error("Error submitting report:", error.message);
       alert(`Failed to submit: ${error.message}`);
@@ -276,7 +296,14 @@ export default function SubmitReports() {
               )}
 
               {/* Shown whenever automatic location is not active. */}
-              <LocationForm value={manual} onChange={setManual} />
+              <LocationForm
+                value={manual}
+                errors={manualErrors}
+                onChange={(next) => {
+                  setManual(next);
+                  setManualErrors({});
+                }}
+              />
             </>
           )}
         </Stack>
