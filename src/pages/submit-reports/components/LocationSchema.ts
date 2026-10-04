@@ -1,53 +1,52 @@
 import { z } from "zod/v4";
 
-export const STREET_MAX_LENGTH = 150;
-
-/** PSGC codes are 9-digit numeric strings, e.g. "141102000". */
-const psgcCode = z.string().regex(/^\d{9}$/, { error: "Invalid location code" });
-
-/* ---------- Manual location: the raw LocationForm input ----------
- * Mirrors exactly what <LocationForm /> holds in state. The city and barangay
- * options come from the PSGC API (see usePsgc.ts), so the dropdowns are the
- * source of truth; this schema checks the shape and the dependencies.
- *
- * Rules:
- *  - The whole location is optional, so an empty form (no city) is valid.
- *  - A city is a code + name pair; so is a barangay.
- *  - Barangay and street need a city (the inputs are disabled without one).
- *  - Street is trimmed and length-limited.
+/* ---------- Search area: Cordillera Administrative Region ----------
+ * Rough bounding box around Abra, Apayao, Benguet (incl. Baguio), Ifugao,
+ * Kalinga and Mountain Province. Used to limit place search and to validate
+ * that a chosen place is really in the region.
  */
-export const manualLocationInputSchema = z
-  .object({
-    cityCode: psgcCode.nullable(),
-    city: z.string().min(1).nullable(),
-    barangayCode: psgcCode.nullable(),
-    barangay: z.string().min(1).nullable(),
-    street: z
-      .string()
-      .trim()
-      .max(STREET_MAX_LENGTH, {
-        error: `Keep this under ${STREET_MAX_LENGTH} characters`,
-      }),
-  })
-  .superRefine((value, ctx) => {
-    const hasCity = Boolean(value.cityCode && value.city);
+export const CORDILLERA_BBOX = {
+  west: 120.3,
+  south: 16.1,
+  east: 121.6,
+  north: 18.6,
+} as const;
 
-    if (!hasCity && (value.barangayCode || value.barangay || value.street)) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["city"],
-        message: "Select a city or municipality first",
-      });
-    }
+/** Baguio City. Used to rank nearby results first. */
+export const CORDILLERA_CENTER = { latitude: 16.4023, longitude: 120.596 };
 
-    if (Boolean(value.barangayCode) !== Boolean(value.barangay)) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["barangay"],
-        message: "Select a barangay from the list",
-      });
-    }
-  });
+export function isInCordillera(latitude: number, longitude: number): boolean {
+  return (
+    latitude >= CORDILLERA_BBOX.south &&
+    latitude <= CORDILLERA_BBOX.north &&
+    longitude >= CORDILLERA_BBOX.west &&
+    longitude <= CORDILLERA_BBOX.east
+  );
+}
+
+/* ---------- A place picked from the search suggestions ---------- */
+
+export const PLACE_KINDS = [
+  "barangay",
+  "city",
+  "street",
+  "landmark",
+  "address",
+  "other",
+] as const;
+
+export type PlaceKind = (typeof PLACE_KINDS)[number];
+
+export const placeSuggestionSchema = z.object({
+  /** Stable id from the search provider, e.g. "N123456" */
+  id: z.string().min(1),
+  name: z.string().min(1),
+  /** Second line: street / barangay / city / province, as available */
+  secondary: z.string(),
+  kind: z.enum(PLACE_KINDS),
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+});
 
 /* ---------- Final location payload (what gets saved) ---------- */
 
@@ -59,49 +58,20 @@ export const gpsLocationSchema = z.object({
   accuracy: z.number().nonnegative(),
 });
 
-export const manualLocationSchema = z.object({
-  source: z.literal("manual"),
-  cityCode: psgcCode,
-  city: z.string().min(1, { error: "City or municipality is required" }),
-  barangayCode: psgcCode.nullable(),
-  barangay: z.string().min(1).nullable(),
-  street: z.string().max(STREET_MAX_LENGTH).nullable(),
-});
+export const placeLocationSchema = placeSuggestionSchema
+  .extend({ source: z.literal("place") })
+  .refine((place) => isInCordillera(place.latitude, place.longitude), {
+    error: "That place is outside the Cordillera region",
+  });
 
 export const reportLocationSchema = z.discriminatedUnion("source", [
   gpsLocationSchema,
-  manualLocationSchema,
+  placeLocationSchema,
 ]);
 
 /* ---------- Types (inferred, so they can't drift from the schema) ---------- */
 
-export type ManualLocationValue = z.infer<typeof manualLocationInputSchema>;
+export type PlaceSuggestion = z.infer<typeof placeSuggestionSchema>;
 export type GpsLocation = z.infer<typeof gpsLocationSchema>;
+export type PlaceLocation = z.infer<typeof placeLocationSchema>;
 export type ReportLocation = z.infer<typeof reportLocationSchema>;
-
-export const EMPTY_MANUAL_LOCATION: ManualLocationValue = {
-  cityCode: null,
-  city: null,
-  barangayCode: null,
-  barangay: null,
-  street: "",
-};
-
-/** Per-field error messages for <LocationForm />. */
-export type ManualLocationErrors = Partial<
-  Record<keyof ManualLocationValue, string>
->;
-
-export function getManualLocationErrors(
-  value: ManualLocationValue,
-): ManualLocationErrors {
-  const result = manualLocationInputSchema.safeParse(value);
-  if (result.success) return {};
-
-  const errors: ManualLocationErrors = {};
-  for (const issue of result.error.issues) {
-    const field = issue.path[0] as keyof ManualLocationValue | undefined;
-    if (field && !errors[field]) errors[field] = issue.message;
-  }
-  return errors;
-}

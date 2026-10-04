@@ -1,94 +1,175 @@
-import { Loader, Select, Stack, Text, TextInput } from "@mantine/core";
-import { useBarangays, useCities } from "./usePsgc";
-import type {
-  ManualLocationErrors,
-  ManualLocationValue,
-} from "./LocationSchema";
-
-/* Types and validation live in ./locationSchema; re-exported for convenience. */
-export {
-  EMPTY_MANUAL_LOCATION,
-  type GpsLocation,
-  type ManualLocationValue,
-  type ReportLocation,
-} from "./LocationSchema";
+import {
+  Alert,
+  Button,
+  CloseButton,
+  Group,
+  Loader,
+  Popover,
+  Stack,
+  Text,
+  TextInput,
+} from "@mantine/core";
+import { useState } from "react";
+import LocationCard, { PinIcon } from "./LocationCard";
+import { usePlaceSuggestions } from "./usePlaceSearch";
+import type { ReportLocationState } from "./useReportLocation";
 
 interface LocationFormProps {
-  value: ManualLocationValue;
-  onChange: (value: ManualLocationValue) => void;
-  /** Validation messages from `getManualLocationErrors`. */
-  errors?: ManualLocationErrors;
-  disabled?: boolean;
+  location: ReportLocationState;
+  /** Current report description, used to suggest places it mentions. */
+  description: string;
 }
 
+/** The "Location" block: GPS button, or a search box with suggested places. */
 export default function LocationForm({
-  value,
-  onChange,
-  errors = {},
-  disabled = false,
+  location,
+  description,
 }: LocationFormProps) {
-  const cities = useCities();
-  const barangays = useBarangays(value.cityCode);
+  const { gps, place } = location;
+  const [open, setOpen] = useState(false);
+
+  const search = usePlaceSuggestions(
+    location.query,
+    description,
+    open && !gps && !place,
+  );
+
+  const choose = (selected: Parameters<typeof location.selectPlace>[0]) => {
+    location.selectPlace(selected);
+    setOpen(false);
+  };
 
   return (
     <Stack gap="xs">
-      <Text size="sm" c="dimmed">
-        Choose where the issue is. This is optional.
+      <Text fw={500} size="sm">
+        Location
       </Text>
 
-      <Select
-        label="City / Municipality"
-        placeholder="Select city or municipality"
-        data={cities.options}
-        value={value.cityCode}
-        onChange={(cityCode, option) =>
-          // Changing the city clears the barangay, since the lists differ.
-          onChange({
-            ...value,
-            cityCode,
-            city: option?.label ?? null,
-            barangayCode: null,
-            barangay: null,
-          })
-        }
-        error={errors.city ?? cities.error}
-        rightSection={cities.loading ? <Loader size="xs" /> : undefined}
-        searchable
-        clearable
-        disabled={disabled}
-      />
+      {gps ? (
+        <Alert color="green" title="Location added">
+          <Group justify="space-between" align="center">
+            <Group gap={6} wrap="nowrap">
+              <PinIcon size={16} />
+              <Text size="sm">
+                {gps.latitude.toFixed(5)}, {gps.longitude.toFixed(5)} (±
+                {Math.round(gps.accuracy)} m)
+              </Text>
+            </Group>
+            <Button
+              size="xs"
+              variant="subtle"
+              color="gray"
+              onClick={location.clearGps}
+            >
+              Search a place instead
+            </Button>
+          </Group>
+        </Alert>
+      ) : (
+        <>
+          <Button
+            variant="light"
+            onClick={location.requestLocation}
+            loading={location.locating}
+            disabled={location.permissionDenied}
+          >
+            Use my current location
+          </Button>
 
-      <Select
-        label="Barangay"
-        placeholder={
-          value.cityCode ? "Select barangay" : "Select a city or municipality first"
-        }
-        data={barangays.options}
-        value={value.barangayCode}
-        onChange={(barangayCode, option) =>
-          onChange({
-            ...value,
-            barangayCode,
-            barangay: option?.label ?? null,
-          })
-        }
-        error={errors.barangay ?? barangays.error}
-        rightSection={barangays.loading ? <Loader size="xs" /> : undefined}
-        searchable
-        clearable
-        disabled={disabled || !value.cityCode}
-      />
+          {location.gpsError && (
+            <Alert color="orange" title="Couldn't get your location">
+              {location.gpsError}
+            </Alert>
+          )}
 
-      <TextInput
-        label="Street or landmark"
-        placeholder="e.g., In front of the public market entrance"
-        value={value.street}
-        onChange={(event) =>
-          onChange({ ...value, street: event.currentTarget.value })
-        }
-        error={errors.street}
-        disabled={disabled || !value.cityCode}
-      />
+          {location.permissionDenied && !location.gpsError && (
+            <Text size="sm" c="dimmed">
+              Location access is blocked for this site. Search for the place
+              below, or allow access in your browser settings.
+            </Text>
+          )}
+
+          {place ? (
+            <Alert color="green" title="Location added">
+              <Group justify="space-between" align="center">
+                <Group gap={6} wrap="nowrap">
+                  <PinIcon size={16} />
+                  <Text size="sm">
+                    {place.name}
+                    {place.secondary ? `, ${place.secondary}` : ""}
+                  </Text>
+                </Group>
+                <Button
+                  size="xs"
+                  variant="subtle"
+                  color="gray"
+                  onClick={location.clearPlace}
+                >
+                  Change
+                </Button>
+              </Group>
+            </Alert>
+          ) : (
+            <Popover
+              opened={open}
+              onChange={setOpen}
+              width="target"
+              position="bottom-start"
+              shadow="md"
+              withinPortal={false}
+            >
+              <Popover.Target>
+                <TextInput
+                  label="Search for a place"
+                  description="A barangay, landmark, street, or address in the Cordillera."
+                  placeholder="e.g., Burnham Park, Session Road, Brgy. Irisan"
+                  value={location.query}
+                  onChange={(event) =>
+                    location.setQuery(event.currentTarget.value)
+                  }
+                  onFocus={() => setOpen(true)}
+                  onKeyDown={(event) => {
+                    // Never submit the report from the search box.
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      if (open && search.suggestions[0]) {
+                        choose(search.suggestions[0]);
+                      }
+                    }
+                  }}
+                  error={location.searchError}
+                  rightSectionPointerEvents="all"
+                  rightSection={
+                    search.loading ? (
+                      <Loader size="xs" />
+                    ) : location.query ? (
+                      <CloseButton
+                        size="sm"
+                        aria-label="Clear search"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => location.setQuery("")}
+                      />
+                    ) : undefined
+                  }
+                  autoComplete="off"
+                />
+              </Popover.Target>
+
+              <Popover.Dropdown p={0}>
+                <LocationCard
+                  suggestions={search.suggestions}
+                  loading={search.loading}
+                  error={search.error}
+                  mode={search.mode}
+                  query={location.query}
+                  hasHints={search.hasHints}
+                  onSelect={choose}
+                />
+              </Popover.Dropdown>
+            </Popover>
+          )}
+        </>
+      )}
     </Stack>
   );
 }
