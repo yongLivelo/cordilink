@@ -1,4 +1,10 @@
 import Camera from "@/pages/submit-reports/components/Camera";
+import LocationForm from "@/pages/submit-reports/components/LocationForm";
+import {
+  formatLocation,
+  saveReportLocation,
+  useReportLocation,
+} from "@/pages/submit-reports/components/useReportLocation";
 import { Button, Stack, Textarea } from "@mantine/core";
 import { schemaResolver, useForm } from "@mantine/form";
 import { supabase } from "@/lib/supabaseClient";
@@ -14,8 +20,10 @@ const schema = z.object({
 });
 
 export default function SubmitReports() {
+  const [loading, setLoading] = useState(false);
+  const [description, setDescription] = useState("");
+  const reportLocation = useReportLocation();
   const { session } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [cameraResetKey, setCameraResetKey] = useState(0);
 
   const form = useForm({
@@ -148,14 +156,21 @@ export default function SubmitReports() {
 
         <Textarea
           label="Description"
-          description="Include specific facts: what exactly happened, and any visible damage or immediate actions taken."
-          placeholder="e.g., I noticed a severe water leak coming from the ceiling pipe near the main entrance..."
-          minRows={4}
+          description="Use this format: What happened, Where, When, and the Impact. Stick to facts you saw."
+          placeholder={
+            "What: Broken water pipe flooding the road\n" +
+            "Where: In front of Burnham Park main gate, Baguio City\n" +
+            "When: Since this morning\n" +
+            "Impact: One lane blocked, water is ankle-deep"
+          }
+          minRows={6}
           autosize
           {...form.getInputProps("description")}
         />
 
-        <Button type="submit" loading={isSubmitting}>
+        <LocationForm location={reportLocation} description={description} />
+
+        <Button type="submit" loading={loading}>
           Submit
         </Button>
       </Stack>
