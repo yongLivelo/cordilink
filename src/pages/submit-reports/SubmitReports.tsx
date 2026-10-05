@@ -4,72 +4,132 @@ import { schemaResolver, useForm } from "@mantine/form";
 import { supabase } from "@/lib/supabaseClient";
 import { useState } from "react";
 import { z } from "zod/v4";
+import { useAuth } from "@/context/AuthContext";
+
 const schema = z.object({
   image: z.string().min(2, { error: "You must take an image" }),
   description: z
     .string()
-    .min(5, { error: "You must have atleast 5 characters" }),
+    .min(5, { error: "You must have at least 5 characters" }),
 });
+
 export default function SubmitReports() {
-  const [loading, setLoading] = useState(false);
+  const { session } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cameraResetKey, setCameraResetKey] = useState(0);
 
   const form = useForm({
     mode: "uncontrolled",
     initialValues: {
-      image: null as string | null,
+      image: null as null | string,
+      location: "",
       description: "",
     },
     validate: schemaResolver(schema, { sync: true }),
   });
 
+  const uploadImage = async (base64Image: string) => {
+    const base64Clean = base64Image.replace(/^data:image\/\w+;base64,/, "");
+    const arrayBuffer = Uint8Array.from(atob(base64Clean), (c) =>
+      c.charCodeAt(0),
+    );
+    const fileName = `${Date.now()}.png`;
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("report_images")
+      .upload(fileName, arrayBuffer, {
+        contentType: "image/png",
+        upsert: false,
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data: publicUrlData } = supabase.storage
+      .from("report_images")
+      .getPublicUrl(uploadData.path);
+
+    return { imageUrl: publicUrlData.publicUrl, base64Clean };
+  };
+
+  const aiCategorize = async (image: string, description: string) => {
+    const { data, error } = await supabase.functions.invoke("ai-categorizer", {
+      body: {
+        image: image,
+        description: description,
+      },
+    });
+
+    if (error) {
+      throw new Error(`AI categorization failed: ${error.message}`);
+    }
+
+    return data?.category ?? "other";
+  };
+
+  const aggregateReport = async (location: string, category: string) => {
+    const { data, error } = await supabase.functions.invoke("aggregateReport", {
+      body: {
+        location,
+        category,
+      },
+    });
+
+    if (error) {
+      throw new Error(`Report aggregation failed: ${error.message}`);
+    }
+
+    return data?.incidentId;
+  };
+
+  const createReport = async (
+    userId: string,
+    description: string,
+    imageUrl: string,
+    category: string,
+    incidentId: string,
+  ) => {
+    const { error: dbError } = await supabase.from("report").insert([
+      {
+        location: "Location Here",
+        category,
+        description,
+        image_url: imageUrl,
+        incident_id: incidentId,
+        user_id: userId,
+      },
+    ]);
+
+    if (dbError) throw dbError;
+  };
+
   const handleSubmit = async (values: typeof form.values) => {
-    if (!values.image) return;
-    setLoading(true);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    if (!values.image || !session?.user) {
+      alert("You must be signed in to submit a report.");
+      return;
+    }
+    setIsSubmitting(true);
+
     try {
-      const base64Clean = values.image.replace(/^data:image\/\w+;base64,/, "");
-      const arrayBuffer = Uint8Array.from(atob(base64Clean), (c) =>
-        c.charCodeAt(0),
+      const { imageUrl, base64Clean } = await uploadImage(values.image);
+      const category = await aiCategorize(base64Clean, values.description);
+      const incidentId = await aggregateReport(location, category);
+      await createReport(
+        session.user.id,
+        values.description,
+        imageUrl,
+        incidentId,
+        category,
       );
-      const fileName = `${Date.now()}.png`;
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("report_images")
-        .upload(fileName, arrayBuffer, {
-          contentType: "image/png",
-          upsert: false,
-        });
-
-      if (uploadError) throw uploadError;
-
-      const { data: publicUrlData } = supabase.storage
-        .from("report_images")
-        .getPublicUrl(uploadData.path);
-
-      const imageUrl = publicUrlData.publicUrl;
-
-      const { error: dbError } = await supabase.from("reports").insert([
-        {
-          title: "Title Here",
-          location: "Location Here",
-          category: "road_hazard",
-          description: values.description,
-          image_url: imageUrl,
-          user_id: user?.id,
-        },
-      ]);
-
-      if (dbError) throw dbError;
-
       alert("Report and image submitted successfully!");
       form.reset();
-    } catch (error: any) {
-      console.error("Error submitting report:", error.message);
-      alert(`Failed to submit: ${error.message}`);
+      setCameraResetKey((key) => key + 1);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      console.error("Error submitting report:", errorMessage);
+      alert(errorMessage);
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -83,6 +143,7 @@ export default function SubmitReports() {
           onRetake={() => {
             form.setFieldValue("image", null);
           }}
+          resetKey={cameraResetKey}
         />
 
         <Textarea
@@ -94,7 +155,7 @@ export default function SubmitReports() {
           {...form.getInputProps("description")}
         />
 
-        <Button type="submit" loading={loading}>
+        <Button type="submit" loading={isSubmitting}>
           Submit
         </Button>
       </Stack>

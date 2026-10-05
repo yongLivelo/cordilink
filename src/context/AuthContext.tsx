@@ -5,7 +5,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 interface AuthContextType {
   session: Session | null;
   loading: boolean;
-  role: Role | null;
+  role: Role;
 }
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -27,6 +27,7 @@ export default function AuthProvider({
       if (error) {
         console.error("Failed to get role: ", error);
       }
+
       setRole(data?.role ?? null);
       setLoading(false);
     } else {
