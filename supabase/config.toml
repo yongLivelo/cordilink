@@ -119,8 +119,8 @@ enabled = true
 file_size_limit = "50MiB"
 
 # Uncomment to configure local storage buckets
-[storage.buckets.report_images]
-public = true
+# [storage.buckets.images]
+# public = false
 # file_size_limit = "50MiB"
 # allowed_mime_types = ["image/png", "image/jpeg"]
 # objects_path = "./images"
@@ -377,7 +377,7 @@ enabled = true
 # Supported request policies: `oneshot`, `per_worker`.
 # `per_worker` (default) — enables hot reload during local development.
 # `oneshot` — fallback mode if hot reload causes issues (e.g. in large repos or with symlinks).
-policy = "per_worker"
+policy = "oneshot"
 # Port to attach the Chrome inspector for debugging edge functions.
 inspector_port = 8083
 # The Deno major version to use.
@@ -413,3 +413,25 @@ enabled = true
 # formatted with uppercase keywords, indent 2, max width 180, trailing commas,
 # and column/key alignment. Set to "null" to emit raw, unformatted SQL.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":180,\"commaStyle\":\"trailing\"}"
+
+[functions.ai-categorizer]
+enabled = true
+verify_jwt = true
+import_map = "./functions/ai-categorizer/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/ai-categorizer/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/ai-categorizer/*.html" ]
+
+[functions.report-aggregator]
+enabled = true
+verify_jwt = false
+import_map = "./functions/report-aggregator/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/report-aggregator/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/report-aggregator/*.html" ]
