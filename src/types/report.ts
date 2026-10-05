@@ -1,23 +1,25 @@
+export type ReportStatus = "pending" | "in-progress" | "resolved";
+
 export type Report = {
-  title: string;
-  image_url: string;
+  id: number;
+  user_id: string;
   description: string;
-  category: string;
+  image_url: string;
   location: string;
-  status: "pending" | "in-progress" | "resolved";
+  incident_id: number;
+  created_at: string;
+  category: string;
+  status: ReportStatus;
 };
 
-export type MyReport = {
+export type Incident = {
   id: number;
-  type: "my-report";
-  report: Report;
-  connectedTo?: string;
-};
-
-export type CommunityReport = {
-  id: number;
-  type: "community-report";
-  report: Report;
-  connectedTo?: string;
-  vote: "up" | "down" | "none";
+  title: string;
+  description: string;
+  image_url: string;
+  location: string;
+  created_at: string;
+  category: string;
+  status: ReportStatus;
+  is_community_report: boolean;
 };

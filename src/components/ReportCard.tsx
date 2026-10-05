@@ -1,4 +1,4 @@
-import type { MyReport, CommunityReport } from "@/types/report";
+import type { Report, Incident } from "@/types/report";
 import {
   Card,
   Image,
@@ -12,29 +12,26 @@ import {
 import { useState } from "react";
 
 interface ReportCardProps {
-  report: MyReport | CommunityReport;
+  report: Report | Incident;
   onEdit?: () => void;
   onDelete?: () => void;
+  onSelect?: () => void; // <-- Added to handle modal selection
 }
 
 export default function ReportCard({
   report,
   onEdit,
   onDelete,
+  onSelect,
 }: ReportCardProps) {
-  const {
-    title,
-    image_url: image,
-    description,
-    category,
-    location,
-    status,
-  } = report.report;
-  const { connectedTo } = report;
-
-  const isCommunity = report.type === "community-report";
+  const isIncident = "title" in report;
+  const { image_url: image, description, category, location, status } = report;
+  const displayTitle = isIncident ? report.title : `${category} Report`;
+  const connectedIncidentId = !isIncident
+    ? (report as Report).incident_id
+    : null;
   const [currentVote, setCurrentVote] = useState<"up" | "down" | "none">(
-    isCommunity ? report.vote : "none",
+    "none",
   );
 
   const statusColors: Record<string, string> = {
@@ -55,7 +52,7 @@ export default function ReportCard({
       </Card.Section>
 
       <Group justify="space-between" mt="md" mb="xs">
-        <Text fw={700}>{title}</Text>
+        <Text fw={700}>{displayTitle}</Text>
         <Badge color={statusColors[status] || "gray"} variant="light">
           {status}
         </Badge>
@@ -69,15 +66,27 @@ export default function ReportCard({
         <Text size="sm" fw={500}>
           📍 {location}
         </Text>
-
-        {connectedTo && (
+        {connectedIncidentId && (
           <Text size="xs" c="gray">
-            Linked to: <Anchor>{connectedTo}</Anchor>
+            Linked to Incident: <Anchor>#{connectedIncidentId}</Anchor>
           </Text>
         )}
       </Stack>
 
-      {isCommunity && (
+      {/* Conditionally render the Select button if onSelect is passed */}
+      {onSelect ? (
+        <Group
+          justify="center"
+          mt="md"
+          pt="md"
+          style={{ borderTop: "1px solid #eee" }}
+        >
+          <Button fullWidth variant="light" color="blue" onClick={onSelect}>
+            Yes, this is the same incident
+          </Button>
+        </Group>
+      ) : isIncident ? (
+        // Incident Footer (Community Voting)
         <Group
           justify="space-between"
           mt="md"
@@ -87,7 +96,6 @@ export default function ReportCard({
           <Text size="sm" c="dimmed">
             Your Vote: <b>{currentVote.toUpperCase()}</b>
           </Text>
-
           <Group gap="xs">
             <Button
               size="xs"
@@ -111,9 +119,8 @@ export default function ReportCard({
             </Button>
           </Group>
         </Group>
-      )}
-
-      {!isCommunity && (
+      ) : (
+        // Report Footer (Edit/Delete Actions for the user's own reports)
         <Group
           justify="flex-end"
           mt="md"

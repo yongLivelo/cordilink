@@ -2,6 +2,10 @@ import "@supabase/functions-js/edge-runtime.d.ts";
 import { withSupabase } from "@supabase/server";
 import { Redis } from "@upstash/redis";
 import { Ratelimit } from "@upstash/ratelimit";
+import {
+  GoogleGenerativeAI,
+  SchemaType,
+} from "https://esm.sh/@google/generative-ai";
 
 const CATEGORIES = [
   "road_hazard",
@@ -79,14 +83,6 @@ export default {
       );
     }
 
-    const parts: Record<string, unknown>[] = [];
-    if (image) {
-      parts.push({ inline_data: { mime_type: "image/jpeg", data: image } });
-    }
-    if (text?.trim()) {
-      parts.push({ text: text.trim() });
-    }
-
     const prompt = `Categorize this report into exactly one category.
 
 Categories: ${CATEGORIES.join(", ")}
@@ -97,71 +93,101 @@ contained in them.
 
 Respond with JSON only.`;
 
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }, ...parts] }],
-          generationConfig: {
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: "object",
-              properties: {
-                category: { type: "string", enum: [...CATEGORIES] },
-                confidence: { type: "number" },
-                reasoning: { type: "string" },
-              },
-              required: ["category", "confidence", "reasoning"],
-            },
-          },
-        }),
-      },
-    );
+    // The SDK requires mixed content arrays to be of type 'Part'
+    const parts: any[] = [{ text: prompt }];
 
-    if (!res.ok) {
-      const detail = await res.text();
-      return Response.json({ error: "gemini error", detail }, { status: 502 });
+    if (image) {
+      // Note: The SDK uses camelCase (inlineData, mimeType) instead of snake_case
+      parts.push({
+        inlineData: {
+          mimeType: "image/jpeg",
+          data: image,
+        },
+      });
     }
 
-    const payload = await res.json();
-    const raw = payload?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!raw) {
-      return Response.json(
-        { error: "empty response from gemini" },
-        { status: 502 },
-      );
+    if (text?.trim()) {
+      parts.push({ text: text.trim() });
     }
 
-    let parsed: {
-      category?: unknown;
-      confidence?: unknown;
-      reasoning?: unknown;
-    };
     try {
-      parsed = JSON.parse(raw);
-    } catch {
+      // Initialize the SDK
+      const genAI = new GoogleGenerativeAI(apiKey);
+
+      // Instantiate the model with the JSON schema configuration
+      const model = genAI.getGenerativeModel({
+        model: "gemini-1.5-flash", // Use a stable 1.5 model that supports structured outputs
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: SchemaType.OBJECT,
+            properties: {
+              category: {
+                type: SchemaType.STRING,
+                // Cast to string[] to satisfy the SDK's type requirements
+                enum: CATEGORIES as unknown as string[],
+              },
+              confidence: { type: SchemaType.NUMBER },
+              reasoning: { type: SchemaType.STRING },
+            },
+            required: ["category", "confidence", "reasoning"],
+          },
+        },
+      });
+
+      // Call the API
+      const result = await model.generateContent(parts);
+      const raw = result.response.text();
+
+      if (!raw) {
+        return Response.json(
+          { error: "empty response from gemini" },
+          { status: 502 },
+        );
+      }
+
+      let parsed: {
+        category?: unknown;
+        confidence?: unknown;
+        reasoning?: unknown;
+      };
+
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        return Response.json(
+          { error: "invalid JSON from gemini" },
+          { status: 502 },
+        );
+      }
+
+      if (!isCategory(parsed.category)) {
+        return Response.json(
+          {
+            error: "gemini returned an invalid category",
+            got: parsed.category,
+          },
+          { status: 422 },
+        );
+      }
+
       return Response.json(
-        { error: "invalid JSON from gemini" },
+        {
+          category: parsed.category,
+          confidence: parsed.confidence,
+          reasoning: parsed.reasoning,
+        },
+        { headers: rateHeaders },
+      );
+    } catch (error) {
+      console.error("Gemini SDK Error:", error);
+      return Response.json(
+        {
+          error: "gemini error",
+          detail: error instanceof Error ? error.message : String(error),
+        },
         { status: 502 },
       );
     }
-
-    if (!isCategory(parsed.category)) {
-      return Response.json(
-        { error: "gemini returned an invalid category", got: parsed.category },
-        { status: 422 },
-      );
-    }
-
-    return Response.json(
-      {
-        category: parsed.category,
-        confidence: parsed.confidence,
-        reasoning: parsed.reasoning,
-      },
-      { headers: rateHeaders },
-    );
   }),
 };

@@ -20,7 +20,7 @@ export default function AuthProvider({
   const fetchRole = async (session: Session | null) => {
     if (session?.user) {
       const { data, error } = await supabase
-        .from("profile")
+        .from("profiles")
         .select("role")
         .eq("id", session.user.id)
         .maybeSingle();
