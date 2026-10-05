@@ -1,11 +1,12 @@
 import Camera from "@/pages/submit-reports/components/Camera";
-import { Button, Modal, Stack, Textarea } from "@mantine/core";
+import LocationForm from "@/pages/submit-reports/components/LocationForm";
+import { useReportLocation } from "@/pages/submit-reports/components/useReportLocation";
+import { Button, Stack, Textarea } from "@mantine/core";
 import { schemaResolver, useForm } from "@mantine/form";
 import { supabase } from "@/lib/supabaseClient";
 import { useState } from "react";
 import { z } from "zod/v4";
 import { useAuth } from "@/context/AuthContext";
-import { useDisclosure } from "@mantine/hooks";
 
 const schema = z.object({
   image: z.string().min(2, { error: "You must take an image" }),
@@ -15,9 +16,10 @@ const schema = z.object({
 });
 
 export default function SubmitReports() {
+  const [loading, setLoading] = useState(false);
+  const reportLocation = useReportLocation();
+  const [description, setDescription] = useState("");
   const { session } = useAuth();
-  const [opened, { open, close }] = useDisclosure(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [cameraResetKey, setCameraResetKey] = useState(0);
 
   const form = useForm({
@@ -29,6 +31,7 @@ export default function SubmitReports() {
     },
     validate: schemaResolver(schema, { sync: true }),
   });
+  form.watch("description", ({ value }) => setDescription(value));
 
   const uploadImage = async (base64Image: string) => {
     const base64Clean = base64Image.replace(/^data:image\/\w+;base64,/, "");
@@ -68,69 +71,31 @@ export default function SubmitReports() {
     return data?.category ?? "other";
   };
 
-  async function findNearbyIncidents(location: string, category: string) {
-    const [latStr, lngStr] = location.split(",");
-    const lat = parseFloat(latStr);
-    const lng = parseFloat(lngStr);
-
-    if (isNaN(lat) || isNaN(lng)) {
-      throw new Error("Invalid location string format");
-    }
-
-    const { data, error } = await supabase.rpc("get_nearby_incidents", {
-      query_lat: lat,
-      query_lng: lng,
-      radius_meters: 50,
-      category: category,
+  const aggregateReport = async (location: string, category: string) => {
+    const { data, error } = await supabase.functions.invoke("aggregateReport", {
+      body: {
+        location,
+        category,
+      },
     });
 
     if (error) {
-      console.error("Error fetching nearby incidents:", error);
-      return null;
+      throw new Error(`Report aggregation failed: ${error.message}`);
     }
 
-    return data;
-  }
+    return data?.incidentId;
+  };
 
-  async function aggregateReport(location: string, category: string) {
-    const nearbyIncidents = await findNearbyIncidents(location, category);
-
-    if (!nearbyIncidents || nearbyIncidents.length === 0) {
-      const [lat, lng] = location.split(",");
-      const pointLocation = `POINT(${lng} ${lat})`;
-      const { data, error } = await supabase
-        .from("incident")
-        .insert({ location: pointLocation, category })
-        .select("id")
-        .single();
-
-      if (error) {
-        console.error("Error inserting new incident: ", error);
-      }
-
-      return [data?.id];
-    } else {
-      return nearbyIncidents;
-    }
-  }
   const createReport = async (
     userId: string,
     description: string,
-    location: string,
     imageUrl: string,
-    incidentId: string,
     category: string,
+    incidentId: string,
   ) => {
-    const [latStr, lngStr] = location.split(",");
-    const lat = parseFloat(latStr);
-    const lng = parseFloat(lngStr);
-
-    if (isNaN(lat) || isNaN(lng)) {
-      throw new Error("Invalid location string format");
-    }
     const { error: dbError } = await supabase.from("report").insert([
       {
-        location: `POINT(${lat}, ${lng})`,
+        location,
         category,
         description,
         image_url: imageUrl,
@@ -143,20 +108,24 @@ export default function SubmitReports() {
   };
 
   const handleSubmit = async (values: typeof form.values) => {
-    if (!values.image || !session?.user.id) return;
-    setIsSubmitting(true);
+    if (!values.image || !session?.user) {
+      alert("You must be signed in to submit a report.");
+      return;
+    }
+
+    const { ok, value: location } = reportLocation.validate();
+    if (!ok) return;
+    setLoading(true);
 
     try {
-      const location = values.location?.trim() || "Location Here";
       const { imageUrl, base64Clean } = await uploadImage(values.image);
       const category = await aiCategorize(base64Clean, values.description);
-      const { incidentId, isNew } = await aggregateReport(location, category);
+      const incidentId = await aggregateReport(location, category);
       await createReport(
         session.user.id,
         values.description,
         imageUrl,
-        location,
-        incidentId[0],
+        incidentId,
         category,
       );
       alert("Report and image submitted successfully!");
@@ -168,16 +137,12 @@ export default function SubmitReports() {
       console.error("Error submitting report:", errorMessage);
       alert(errorMessage);
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
     <form onSubmit={form.onSubmit(handleSubmit)}>
-      <Modal opened={opened} onClose={close} title="Authentication">
-        {/* Modal content */}
-      </Modal>
-
       <Stack>
         <Camera
           onCapture={(base64Image: string) => {
@@ -191,14 +156,21 @@ export default function SubmitReports() {
 
         <Textarea
           label="Description"
-          description="Include specific facts: what exactly happened, and any visible damage or immediate actions taken."
-          placeholder="e.g., I noticed a severe water leak coming from the ceiling pipe near the main entrance..."
-          minRows={4}
+          description="Use this format: What happened, Where, When, and the Impact. Stick to facts you saw."
+          placeholder={
+            "What: Broken water pipe flooding the road\n" +
+            "Where: In front of Burnham Park main gate, Baguio City\n" +
+            "When: Since this morning\n" +
+            "Impact: One lane blocked, water is ankle-deep"
+          }
+          minRows={6}
           autosize
           {...form.getInputProps("description")}
         />
 
-        <Button type="submit" loading={isSubmitting}>
+        <LocationForm location={reportLocation} description={description} />
+
+        <Button type="submit" loading={loading}>
           Submit
         </Button>
       </Stack>
