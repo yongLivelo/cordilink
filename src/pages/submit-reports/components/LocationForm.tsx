@@ -36,7 +36,6 @@ export default function LocationForm({
 
   const choose = (selected: Parameters<typeof location.selectPlace>[0]) => {
     location.selectPlace(selected);
-    console.log(selected);
     setOpen(false);
   };
 
@@ -53,7 +52,7 @@ export default function LocationForm({
               <PinIcon size={16} />
               <Text size="sm">
                 {gps.latitude.toFixed(5)}, {gps.longitude.toFixed(5)} (±
-                {Math.round(gps.accuracy)} m)
+                {Math.round(gps.accuracy)} m) @ {gps.name}
               </Text>
             </Group>
             <Button

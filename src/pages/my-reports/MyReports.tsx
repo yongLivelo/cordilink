@@ -9,51 +9,15 @@ import {
   Text,
 } from "@mantine/core";
 import { useEffect, useState, useMemo } from "react";
-import type { Report } from "@/types/report"; // Make sure this matches your raw report type export
+import type { Report } from "@/types/report";
 import ReportCard from "@/components/ReportCard";
-
-// Mock data flattened to strictly match the report table schema[cite: 1]
-const MOCK_REPORTS: Report[] = [
-  {
-    id: 101,
-    user_id: "user-uuid-1",
-    incident_id: 8821,
-    image_url: "https://placehold.co/400x300?text=Broken+Streetlight",
-    description:
-      "The streetlight has been flickering for three days, creating a hazard at night.",
-    category: "Infrastructure",
-    location: "POINT(120.596 16.416)",
-    status: "pending",
-    created_at: "2023-10-25T08:00:00Z",
-  },
-  {
-    id: 102,
-    user_id: "user-uuid-1",
-    incident_id: 8822,
-    image_url: "https://placehold.co/400x300?text=Pothole",
-    description:
-      "Large pothole in the right lane. Needs immediate filling before winter.",
-    category: "Road Hazard",
-    location: "POINT(120.601 16.402)",
-    status: "in-progress",
-    created_at: "2023-10-26T14:30:00Z",
-  },
-  {
-    id: 103,
-    user_id: "user-uuid-1",
-    incident_id: 8850,
-    image_url: "https://placehold.co/400x300?text=Graffiti",
-    description: "Vandalism on the east wall of the library building.",
-    category: "Vandalism",
-    location: "POINT(120.590 16.410)",
-    status: "resolved",
-    created_at: "2023-10-27T09:15:00Z",
-  },
-];
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/lib/supabaseClient";
 
 const ITEMS_PER_PAGE = 2;
 
 export default function MyReports() {
+  const { session } = useAuth();
   const [myReports, setMyReports] = useState<Report[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -63,23 +27,59 @@ export default function MyReports() {
   const [sortOrder, setSortOrder] = useState<string | null>("latest");
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Fetch reports from Supabase filtered by the current user's ID
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchUserReports = async () => {
+      if (!session?.user?.id) {
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
-      // Simulating network request (Replace with Supabase fetch from 'report' table)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setMyReports(MOCK_REPORTS);
+      const { data, error } = await supabase
+        .from("report")
+        .select("*")
+        .eq("user_id", session.user.id);
+
+      if (error) {
+        console.error("Error fetching user reports:", error);
+      } else {
+        setMyReports(data || []);
+      }
       setIsLoading(false);
     };
-    fetchData();
-  }, []);
+
+    fetchUserReports();
+  }, [session]);
+
+  // Handle report deletion from database and local state
+  const handleDelete = async (
+    reportId: number | string,
+    incidentId: number | string,
+  ) => {
+    if (!confirm("Are you sure you want to delete this report?")) return;
+
+    const { error } = await supabase.from("report").delete().eq("id", reportId);
+    supabase.functions
+      .invoke("summarize-incident", {
+        body: { incidentId: incidentId },
+      })
+      .catch((err) => console.error("Summarization check failed:", err));
+    if (error) {
+      console.error("Error deleting report:", error);
+      alert("Failed to delete the report.");
+    } else {
+      // Filter out the deleted report from local state instantly
+      setMyReports((prev) => prev.filter((report) => report.id !== reportId));
+    }
+  };
 
   // Reset to page 1 whenever filters or sorting change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, selectedCategory, sortOrder]);
 
-  // Derive available categories dynamically from the flattened data
+  // Derive available categories dynamically from the fetched data
   const categories = useMemo(() => {
     const uniqueCategories = new Set(myReports.map((item) => item.category));
     return Array.from(uniqueCategories);
@@ -89,13 +89,13 @@ export default function MyReports() {
   const processedData = useMemo(() => {
     let result = [...myReports];
 
-    // 1. Search Filter (checks description and location only, as title is not in the report schema[cite: 1])
+    // 1. Search Filter
     if (searchQuery.trim() !== "") {
       const lowerQuery = searchQuery.toLowerCase();
       result = result.filter(
         (item) =>
           item.description?.toLowerCase().includes(lowerQuery) ||
-          item.location?.toLowerCase().includes(lowerQuery),
+          item.location_name?.toLowerCase().includes(lowerQuery),
       );
     }
 
@@ -128,7 +128,7 @@ export default function MyReports() {
       <Group align="flex-end">
         <TextInput
           label="Search"
-          placeholder="Search descriptions..."
+          placeholder="Search descriptions or locations..."
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.currentTarget.value)}
           flex={1}
@@ -162,7 +162,13 @@ export default function MyReports() {
       ) : paginatedReports.length > 0 ? (
         <Stack mt="md">
           {paginatedReports.map((reportItem) => (
-            <ReportCard key={reportItem.id} report={reportItem} />
+            <ReportCard
+              key={reportItem.id}
+              report={reportItem}
+              onDelete={() =>
+                handleDelete(reportItem.id, reportItem.incident_id)
+              }
+            />
           ))}
 
           {totalPages > 1 && (
@@ -177,7 +183,7 @@ export default function MyReports() {
         </Stack>
       ) : (
         <Center mt="xl">
-          <Text color="dimmed">No reports found matching your criteria.</Text>
+          <Text c="dimmed">No reports found matching your criteria.</Text>
         </Center>
       )}
     </Stack>

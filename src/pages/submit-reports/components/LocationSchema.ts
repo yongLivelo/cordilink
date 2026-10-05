@@ -52,6 +52,7 @@ export const placeSuggestionSchema = z.object({
 
 export const gpsLocationSchema = z.object({
   source: z.literal("gps"),
+  name: z.string().min(1),
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
   /** Accuracy radius in meters, as reported by the browser */

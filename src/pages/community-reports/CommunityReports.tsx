@@ -9,53 +9,17 @@ import {
   Text,
 } from "@mantine/core";
 import { useEffect, useState, useMemo } from "react";
-import type { Incident } from "@/types/report"; // Using Incident instead of the discarded CommunityReport schema
+import type { Incident } from "@/types/report";
 import ReportCard from "@/components/ReportCard";
-
-// Mock data flattened and strictly typed to the Incident schema[cite: 1]
-const MOCK_INCIDENTS: Incident[] = [
-  {
-    id: 8821,
-    title: "Broken Streetlight on 5th",
-    description:
-      "The streetlight has been flickering for three days, creating a hazard at night.",
-    image_url: "https://placehold.co/400x300?text=Broken+Streetlight",
-    category: "Infrastructure",
-    location: "POINT(120.596 16.416)",
-    status: "pending",
-    created_at: "2023-10-25T08:00:00Z",
-    is_community_report: true,
-  },
-  {
-    id: 8822,
-    title: "Large Pothole",
-    description:
-      "Large pothole in the right lane. Needs immediate filling before winter.",
-    image_url: "https://placehold.co/400x300?text=Pothole",
-    category: "Road Hazard",
-    location: "POINT(120.601 16.402)",
-    status: "in-progress",
-    created_at: "2023-10-26T14:30:00Z",
-    is_community_report: true,
-  },
-  {
-    id: 8850,
-    title: "Library Graffiti",
-    description: "Vandalism on the east wall of the library building.",
-    image_url: "https://placehold.co/400x300?text=Graffiti",
-    category: "Vandalism",
-    location: "POINT(120.590 16.410)",
-    status: "resolved",
-    created_at: "2023-10-27T09:15:00Z",
-    is_community_report: true,
-  },
-];
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/context/AuthContext";
 
 const ITEMS_PER_PAGE = 2;
 
 export default function CommunityReportPage() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { session } = useAuth();
 
   // Filter, Sort, and Pagination State
   const [searchQuery, setSearchQuery] = useState("");
@@ -63,17 +27,33 @@ export default function CommunityReportPage() {
   const [sortOrder, setSortOrder] = useState<string | null>("latest");
   const [currentPage, setCurrentPage] = useState(1);
 
+  // FIXED: Added async/await and protected against missing session
+
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchUserReports = async () => {
+      // Allow fetching even if logged out? If you want this hidden from
+      // logged-out users, keep this guard.
+      if (!session?.user?.id) {
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
-      // Simulate network request (e.g., supabase.from('incident').select('*').eq('is_community_report', true))
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setIncidents(MOCK_INCIDENTS);
+      const { data, error } = await supabase
+        .from("incident")
+        .select("*")
+        .eq("is_community_report", true); // FIXED: Changed string "TRUE" to boolean true
+
+      if (error) {
+        console.error("Error fetching user reports:", error);
+      } else {
+        setIncidents(data || []);
+      }
       setIsLoading(false);
     };
 
-    fetchData();
-  }, []);
+    fetchUserReports();
+  }, [session]);
 
   // Reset to page 1 whenever filters or sorting change
   useEffect(() => {
@@ -82,7 +62,11 @@ export default function CommunityReportPage() {
 
   // Derive available categories dynamically from the data
   const categories = useMemo(() => {
-    const uniqueCategories = new Set(incidents.map((item) => item.category));
+    const uniqueCategories = new Set(
+      incidents
+        .map((item) => item.category)
+        .filter((cat): cat is string => Boolean(cat)), // Filter out undefined/null categories
+    );
     return Array.from(uniqueCategories);
   }, [incidents]);
 
@@ -95,9 +79,10 @@ export default function CommunityReportPage() {
       const lowerQuery = searchQuery.toLowerCase();
       result = result.filter(
         (item) =>
-          item.title.toLowerCase().includes(lowerQuery) ||
-          item.description.toLowerCase().includes(lowerQuery) ||
-          item.location.toLowerCase().includes(lowerQuery),
+          // FIXED: Added null-safety before calling .toLowerCase()
+          item.title?.toLowerCase().includes(lowerQuery) ||
+          item.description?.toLowerCase().includes(lowerQuery) ||
+          item.location?.toLowerCase().includes(lowerQuery),
       );
     }
 
@@ -181,7 +166,9 @@ export default function CommunityReportPage() {
         </Stack>
       ) : (
         <Center mt="xl">
-          <Text color="dimmed">
+          <Text c="dimmed">
+            {" "}
+            {/* Note: 'color' is deprecated in Mantine v7, use 'c' */}
             No community reports found matching your criteria.
           </Text>
         </Center>

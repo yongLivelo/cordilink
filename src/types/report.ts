@@ -10,9 +10,11 @@ export type Report = {
   created_at: string;
   category: string;
   status: ReportStatus;
+  location_name: string;
 };
 
 export type Incident = {
+  location_name: string;
   id: number;
   title: string;
   description: string;
@@ -22,4 +24,5 @@ export type Incident = {
   category: string;
   status: ReportStatus;
   is_community_report: boolean;
+  distance_meters: number;
 };

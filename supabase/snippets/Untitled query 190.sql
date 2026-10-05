@@ -1,5 +1,5 @@
-create trigger summarize_incident_trigger
-after insert on report
+create trigger delete_incident_trigger
+after delete on report
 for each row
 execute function supabase_functions.http_request(
   'https://fssiruzvrclqneveicxm.supabase.co/functions/v1/summarize-incident',

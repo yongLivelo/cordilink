@@ -1,4 +1,4 @@
-create or replace function get_nearby_incidents(
+create function get_nearby_incidents(
   query_lat float,
   query_lng float,
   radius_meters float,

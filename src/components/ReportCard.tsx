@@ -1,3 +1,4 @@
+import { supabase } from "@/lib/supabaseClient";
 import type { Report, Incident } from "@/types/report";
 import {
   Card,
@@ -9,30 +10,144 @@ import {
   Button,
   Anchor,
 } from "@mantine/core";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext"; // Import Auth to get current user
 
 interface ReportCardProps {
   report: Report | Incident;
-  onEdit?: () => void;
   onDelete?: () => void;
-  onSelect?: () => void; // <-- Added to handle modal selection
+  onSelect?: () => void;
 }
 
 export default function ReportCard({
   report,
-  onEdit,
   onDelete,
   onSelect,
 }: ReportCardProps) {
+  const { session } = useAuth();
   const isIncident = "title" in report;
-  const { image_url: image, description, category, location, status } = report;
+  const {
+    image_url: image,
+    description,
+    category,
+    location_name,
+    status,
+    id,
+  } = report;
+
   const displayTitle = isIncident ? report.title : `${category} Report`;
   const connectedIncidentId = !isIncident
     ? (report as Report).incident_id
     : null;
+
+  // Real Backend State
+  const [score, setScore] = useState<number>(0);
   const [currentVote, setCurrentVote] = useState<"up" | "down" | "none">(
     "none",
   );
+  const [isVoting, setIsVoting] = useState(false);
+
+  // Fetch initial vote counts and user's specific vote
+  useEffect(() => {
+    if (!isIncident) return; // Only fetch votes if it's an incident
+
+    const fetchVotes = async () => {
+      // 1. Get total upvotes
+      const { count: upCount } = await supabase
+        .from("vote")
+        .select("*", { count: "exact", head: true })
+        .eq("incident_id", id)
+        .eq("vote_type", "up")
+        .maybeSingle();
+
+      // 2. Get total downvotes
+      const { count: downCount } = await supabase
+        .from("vote")
+        .select("*", { count: "exact", head: true })
+        .eq("incident_id", id)
+        .eq("vote_type", "down")
+        .maybeSingle();
+
+      setScore((upCount || 0) - (downCount || 0));
+
+      // 3. Get the current user's vote status
+      if (session?.user?.id) {
+        const { data } = await supabase
+          .from("vote")
+          .select("vote_type")
+          .eq("incident_id", id)
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+
+        if (data) {
+          setCurrentVote(data.vote_type as "up" | "down");
+        }
+      }
+    };
+
+    fetchVotes();
+  }, [id, isIncident, session]);
+
+  // Handle interacting with the database
+  const handleVoteClick = async (type: "up" | "down") => {
+    if (!session) {
+      alert("You must be logged in to vote.");
+      return;
+    }
+
+    // Prevent spam clicking while request is in flight
+    if (isVoting) return;
+    setIsVoting(true);
+
+    // If clicking the same button twice, toggle it off (remove vote)
+    const newVote = currentVote === type ? "none" : type;
+    const previousVote = currentVote;
+    const previousScore = score;
+
+    setCurrentVote(newVote);
+
+    let scoreChange = 0;
+    if (previousVote === "none" && newVote === "up") scoreChange = 1;
+    else if (previousVote === "none" && newVote === "down") scoreChange = -1;
+    else if (previousVote === "up" && newVote === "none") scoreChange = -1;
+    else if (previousVote === "down" && newVote === "none") scoreChange = 1;
+    else if (previousVote === "up" && newVote === "down") scoreChange = -2;
+    else if (previousVote === "down" && newVote === "up") scoreChange = 2;
+
+    setScore((prev) => prev + scoreChange);
+
+    // --- 2. Database Sync ---
+    try {
+      if (newVote === "none") {
+        // Remove the vote completely
+        await supabase
+          .from("vote")
+          .delete()
+          .eq("incident_id", id)
+          .eq("user_id", session.user.id);
+      } else {
+        // Safe Update/Insert: Delete old vote first to prevent duplicates, then insert new vote
+        await supabase
+          .from("vote")
+          .delete()
+          .eq("incident_id", id)
+          .eq("user_id", session.user.id);
+
+        await supabase.from("vote").insert({
+          incident_id: id,
+          user_id: session.user.id,
+          vote_type: newVote,
+        });
+      }
+    } catch (error) {
+      console.error("Error saving vote:", error);
+      // Revert Optimistic Update on failure
+      setCurrentVote(previousVote);
+      setScore(previousScore);
+    } finally {
+      setIsVoting(false);
+    }
+  };
 
   const statusColors: Record<string, string> = {
     pending: "orange",
@@ -64,7 +179,7 @@ export default function ReportCard({
 
       <Stack gap="xs" mt="md">
         <Text size="sm" fw={500}>
-          📍 {location}
+          📍 {location_name}
         </Text>
         {connectedIncidentId && (
           <Text size="xs" c="gray">
@@ -73,7 +188,6 @@ export default function ReportCard({
         )}
       </Stack>
 
-      {/* Conditionally render the Select button if onSelect is passed */}
       {onSelect ? (
         <Group
           justify="center"
@@ -93,17 +207,20 @@ export default function ReportCard({
           pt="md"
           style={{ borderTop: "1px solid #eee" }}
         >
-          <Text size="sm" c="dimmed">
-            Your Vote: <b>{currentVote.toUpperCase()}</b>
+          <Text size="sm" fw={600}>
+            Score:{" "}
+            <Text span c={score > 0 ? "green" : score < 0 ? "red" : "dimmed"}>
+              {score}
+            </Text>
           </Text>
+
           <Group gap="xs">
             <Button
               size="xs"
               variant={currentVote === "up" ? "filled" : "light"}
               color="green"
-              onClick={() =>
-                setCurrentVote(currentVote === "up" ? "none" : "up")
-              }
+              onClick={() => handleVoteClick("up")}
+              loading={isVoting && currentVote !== "up"}
             >
               Upvote
             </Button>
@@ -111,9 +228,8 @@ export default function ReportCard({
               size="xs"
               variant={currentVote === "down" ? "filled" : "light"}
               color="red"
-              onClick={() =>
-                setCurrentVote(currentVote === "down" ? "none" : "down")
-              }
+              onClick={() => handleVoteClick("down")}
+              loading={isVoting && currentVote !== "down"}
             >
               Downvote
             </Button>
@@ -127,9 +243,6 @@ export default function ReportCard({
           pt="md"
           style={{ borderTop: "1px solid #eee" }}
         >
-          <Button size="xs" variant="light" color="blue" onClick={onEdit}>
-            Edit
-          </Button>
           <Button size="xs" variant="light" color="red" onClick={onDelete}>
             Delete
           </Button>

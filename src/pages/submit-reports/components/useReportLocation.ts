@@ -7,32 +7,41 @@ import {
   type ReportLocation,
 } from "./LocationSchema";
 
-/** Short text version of a location, used for the existing `location` column. */
-export function formatLocation(location: ReportLocation | null): string {
-  if (!location) return "Not specified";
-  if (location.source === "gps") {
-    return `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}`;
+// ==========================================
+// 1. REVERSE GEOCODING HELPER
+// ==========================================
+async function reverseGeocode(
+  lat: number,
+  lng: number,
+): Promise<string | undefined> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+    );
+    if (!res.ok) return undefined;
+    const data = await res.json();
+
+    // Attempt to get the most relevant name (specific name > road > neighborhood > fallback)
+    return (
+      data.name ||
+      data.address?.road ||
+      data.address?.neighbourhood ||
+      undefined
+    );
+  } catch (error) {
+    console.error("Reverse geocoding failed:", error);
+    return undefined;
   }
-  return [location.name, location.secondary].filter(Boolean).join(", ");
 }
 
 /* ---------- Placeholder backend call ----------
  * TODO(backend): replace the body with the real route once it exists.
- * Expected contract (adjust to match the backend team):
- *   POST /api/reports/:reportId/location   body: ReportLocation (JSON)
  */
 export async function saveReportLocation(
   reportId: number,
   location: ReportLocation,
 ): Promise<void> {
   console.log("[placeholder] saveReportLocation", reportId, location);
-
-  // const res = await fetch(`/api/reports/${reportId}/location`, {
-  //   method: "POST",
-  //   headers: { "Content-Type": "application/json" },
-  //   body: JSON.stringify(location),
-  // });
-  // if (!res.ok) throw new Error("Failed to save location");
 }
 
 /**
@@ -82,13 +91,22 @@ export function useReportLocation() {
     setGpsError(null);
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const accuracy = position.coords.accuracy;
+
+        // Fetch the human-readable name!
+        const locationName = await reverseGeocode(lat, lng);
+
         setGps({
           source: "gps",
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-        });
+          latitude: lat,
+          longitude: lng,
+          accuracy: accuracy,
+          name: locationName, // <--- Add the fetched name here
+        } as GpsLocation & { name?: string }); // Typecast protects against immediate TS errors
+
         setLocating(false);
       },
       (error) => {
@@ -128,10 +146,6 @@ export function useReportLocation() {
     setSearchError(null);
   };
 
-  /**
-   * Location is optional, but if one is provided it must be valid.
-   * Shows an error and returns `ok: false` when it isn't.
-   */
   const validate = (): { ok: boolean; value: ReportLocation | null } => {
     const location: ReportLocation | null = gps ?? place;
 
