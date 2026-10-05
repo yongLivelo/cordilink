@@ -1,10 +1,6 @@
 import Camera from "@/pages/submit-reports/components/Camera";
 import LocationForm from "@/pages/submit-reports/components/LocationForm";
-import {
-  formatLocation,
-  saveReportLocation,
-  useReportLocation,
-} from "@/pages/submit-reports/components/useReportLocation";
+import { useReportLocation } from "@/pages/submit-reports/components/useReportLocation";
 import { Button, Stack, Textarea } from "@mantine/core";
 import { schemaResolver, useForm } from "@mantine/form";
 import { supabase } from "@/lib/supabaseClient";
@@ -21,8 +17,8 @@ const schema = z.object({
 
 export default function SubmitReports() {
   const [loading, setLoading] = useState(false);
-  const [description, setDescription] = useState("");
   const reportLocation = useReportLocation();
+  const [description, setDescription] = useState("");
   const { session } = useAuth();
   const [cameraResetKey, setCameraResetKey] = useState(0);
 
@@ -35,6 +31,7 @@ export default function SubmitReports() {
     },
     validate: schemaResolver(schema, { sync: true }),
   });
+  form.watch("description", ({ value }) => setDescription(value));
 
   const uploadImage = async (base64Image: string) => {
     const base64Clean = base64Image.replace(/^data:image\/\w+;base64,/, "");
@@ -115,7 +112,11 @@ export default function SubmitReports() {
       alert("You must be signed in to submit a report.");
       return;
     }
-    setIsSubmitting(true);
+
+    const { ok, value: location } = reportLocation.validate();
+    if (!ok) return;
+    console.log(location);
+    setLoading(true);
 
     try {
       const { imageUrl, base64Clean } = await uploadImage(values.image);
@@ -137,7 +138,7 @@ export default function SubmitReports() {
       console.error("Error submitting report:", errorMessage);
       alert(errorMessage);
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 

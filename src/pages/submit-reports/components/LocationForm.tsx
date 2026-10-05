@@ -36,6 +36,7 @@ export default function LocationForm({
 
   const choose = (selected: Parameters<typeof location.selectPlace>[0]) => {
     location.selectPlace(selected);
+    console.log(selected);
     setOpen(false);
   };
 
