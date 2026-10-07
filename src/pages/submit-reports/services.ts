@@ -43,6 +43,7 @@ export async function aiCategorize(
   });
 
   if (error) throw new Error(`AI categorization failed: ${error.message}`);
+  console.log(data);
   return data?.category ?? "other";
 }
 

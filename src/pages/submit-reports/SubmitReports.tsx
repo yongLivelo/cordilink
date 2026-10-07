@@ -15,7 +15,6 @@ import { useReportSubmission } from "@/pages/submit-reports/components/useReport
 
 const schema = z.object({
   image: z.string().min(2, { error: "You must take an image" }),
-  location: z.string().min(2, { error: "You must enter the location" }),
   description: z
     .string()
     .min(5, { error: "You must have at least 5 characters" }),
@@ -56,6 +55,7 @@ export default function SubmitReports() {
   const submission = useReportSubmission({ onSubmitted: resetFormAndInputs });
 
   const handleSubmit = async (values: typeof form.values) => {
+    console.log("hello");
     if (!values.image) return;
 
     const { ok, value: location } = reportLocation.validate();
