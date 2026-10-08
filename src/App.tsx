@@ -16,7 +16,7 @@ import Dashboard from "@/pages/dashboard";
 export default function App() {
   return (
     <AuthProvider>
-      <MantineProvider defaultColorScheme="dark">
+      <MantineProvider defaultColorScheme="light">
         <Suspense>
           <BrowserRouter>
             <Routes>
