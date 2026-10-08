@@ -1,5 +1,3 @@
-import { supabase } from "@/lib/supabaseClient";
-import type { Report, Incident } from "@/types/report";
 import {
   Card,
   Image,
@@ -9,50 +7,71 @@ import {
   Stack,
   Button,
   Anchor,
+  Select,
 } from "@mantine/core";
 import { useEffect, useState } from "react";
-import { useAuth } from "@/context/AuthContext"; // Import Auth to get current user
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/context/AuthContext";
+import type { Report, Incident } from "@/types/report";
 
 interface ReportCardProps {
   report: Report | Incident;
   onDelete?: () => void;
   onSelect?: () => void;
+  onChangeStatus?: (newStatus: string) => void;
+  checkIncidentId?: (incidentId: number) => void;
 }
 
 export default function ReportCard({
   report,
   onDelete,
   onSelect,
+  onChangeStatus,
+  checkIncidentId,
 }: ReportCardProps) {
   const { session } = useAuth();
+
+  // ==========================================
+  // 1. Derived Variables
+  // ==========================================
   const isIncident = "title" in report;
   const {
+    id,
     image_url: image,
     description,
     category,
     location_name,
     status,
-    id,
   } = report;
 
-  const displayTitle = isIncident ? report.title : `${category} Report`;
   const connectedIncidentId = !isIncident
     ? (report as Report).incident_id
     : null;
 
-  // Real Backend State
+  const statusColors: Record<string, string> = {
+    pending: "orange",
+    "in-progress": "blue",
+    resolved: "green",
+  };
+
+  // ==========================================
+  // 2. State
+  // ==========================================
   const [score, setScore] = useState<number>(0);
+  const [statusVal, setStatusVal] = useState<string>(status);
   const [currentVote, setCurrentVote] = useState<"up" | "down" | "none">(
     "none",
   );
   const [isVoting, setIsVoting] = useState(false);
 
-  // Fetch initial vote counts and user's specific vote
+  // ==========================================
+  // 3. Effects
+  // ==========================================
   useEffect(() => {
-    if (!isIncident) return; // Only fetch votes if it's an incident
+    if (!isIncident) return;
 
     const fetchVotes = async () => {
-      // 1. Get total upvotes
+      // Fetch upvotes
       const { count: upCount } = await supabase
         .from("vote")
         .select("*", { count: "exact", head: true })
@@ -60,7 +79,7 @@ export default function ReportCard({
         .eq("vote_type", "up")
         .maybeSingle();
 
-      // 2. Get total downvotes
+      // Fetch downvotes
       const { count: downCount } = await supabase
         .from("vote")
         .select("*", { count: "exact", head: true })
@@ -70,7 +89,7 @@ export default function ReportCard({
 
       setScore((upCount || 0) - (downCount || 0));
 
-      // 3. Get the current user's vote status
+      // Fetch current user's vote
       if (session?.user?.id) {
         const { data } = await supabase
           .from("vote")
@@ -88,22 +107,23 @@ export default function ReportCard({
     fetchVotes();
   }, [id, isIncident, session]);
 
-  // Handle interacting with the database
+  // ==========================================
+  // 4. Handlers
+  // ==========================================
   const handleVoteClick = async (type: "up" | "down") => {
     if (!session) {
       alert("You must be logged in to vote.");
       return;
     }
 
-    // Prevent spam clicking while request is in flight
     if (isVoting) return;
     setIsVoting(true);
 
-    // If clicking the same button twice, toggle it off (remove vote)
     const newVote = currentVote === type ? "none" : type;
     const previousVote = currentVote;
     const previousScore = score;
 
+    // Optimistic UI update
     setCurrentVote(newVote);
 
     let scoreChange = 0;
@@ -116,17 +136,15 @@ export default function ReportCard({
 
     setScore((prev) => prev + scoreChange);
 
-    // --- 2. Database Sync ---
+    // Database Sync
     try {
       if (newVote === "none") {
-        // Remove the vote completely
         await supabase
           .from("vote")
           .delete()
           .eq("incident_id", id)
           .eq("user_id", session.user.id);
       } else {
-        // Safe Update/Insert: Delete old vote first to prevent duplicates, then insert new vote
         await supabase
           .from("vote")
           .delete()
@@ -141,7 +159,6 @@ export default function ReportCard({
       }
     } catch (error) {
       console.error("Error saving vote:", error);
-      // Revert Optimistic Update on failure
       setCurrentVote(previousVote);
       setScore(previousScore);
     } finally {
@@ -149,64 +166,41 @@ export default function ReportCard({
     }
   };
 
-  const statusColors: Record<string, string> = {
-    pending: "orange",
-    "in-progress": "blue",
-    resolved: "green",
-  };
+  // ==========================================
+  // 5. Render Helpers
+  // ==========================================
+  const renderFooterActions = () => {
+    // Layout for the footer boundary
+    const footerProps = {
+      mt: "md",
+      pt: "md",
+      style: { borderTop: "1px solid #eee" },
+    };
 
-  return (
-    <Card shadow="sm" padding="lg" radius="md" withBorder>
-      <Card.Section>
-        <Image
-          src={image}
-          height={160}
-          alt={category}
-          fallbackSrc="https://placehold.co/400x300?text=No+Image"
-        />
-      </Card.Section>
-
-      <Group justify="space-between" mt="md" mb="xs">
-        <Text fw={700}>{displayTitle}</Text>
-        <Badge color={statusColors[status] || "gray"} variant="light">
-          {status}
-        </Badge>
-      </Group>
-
-      <Text size="sm" c="dimmed" lineClamp={2}>
-        {description}
-      </Text>
-
-      <Stack gap="xs" mt="md">
-        <Text size="sm" fw={500}>
-          📍 {location_name}
-        </Text>
-        {connectedIncidentId && (
-          <Text size="xs" c="gray">
-            Linked to Incident: <Anchor>#{connectedIncidentId}</Anchor>
-          </Text>
-        )}
-      </Stack>
-
-      {onSelect ? (
-        <Group
-          justify="center"
-          mt="md"
-          pt="md"
-          style={{ borderTop: "1px solid #eee" }}
-        >
+    // Case 1: Selecting an incident (Link flow)
+    if (onSelect) {
+      return (
+        <Group justify="center" {...footerProps}>
           <Button fullWidth variant="light" color="blue" onClick={onSelect}>
             Yes, this is the same incident
           </Button>
         </Group>
-      ) : isIncident ? (
-        // Incident Footer (Community Voting)
-        <Group
-          justify="space-between"
-          mt="md"
-          pt="md"
-          style={{ borderTop: "1px solid #eee" }}
-        >
+      );
+    }
+    // Case 3: Personal Report view (Delete action)
+    if (onDelete) {
+      return (
+        <Group justify="flex-end" {...footerProps}>
+          <Button size="xs" variant="light" color="red" onClick={onDelete}>
+            Delete
+          </Button>
+        </Group>
+      );
+    }
+    // Case 2: Incident view (Community voting)
+    if (isIncident) {
+      return (
+        <Group justify="space-between" {...footerProps}>
           <Text size="sm" fw={600}>
             Score:{" "}
             <Text span c={score > 0 ? "green" : score < 0 ? "red" : "dimmed"}>
@@ -235,19 +229,82 @@ export default function ReportCard({
             </Button>
           </Group>
         </Group>
-      ) : (
-        // Report Footer (Edit/Delete Actions for the user's own reports)
-        <Group
-          justify="flex-end"
+      );
+    }
+
+    return null;
+  };
+
+  // ==========================================
+  // 6. Main Render
+  // ==========================================
+  return (
+    <Card shadow="sm" padding="lg" radius="md" withBorder>
+      <Card.Section>
+        <Image
+          src={image}
+          height={160}
+          alt={category}
+          fallbackSrc="https://placehold.co/400x300?text=No+Image"
+        />
+      </Card.Section>
+
+      <Group justify="space-between" mt="md" mb="xs">
+        {isIncident && (
+          <Text fw={700} size="lg">
+            {report.title}
+          </Text>
+        )}
+
+        <Stack>
+          <Badge color={statusColors[statusVal] || "gray"} variant="light">
+            {statusVal}
+          </Badge>
+          <Badge color={statusColors[category] || "gray"} variant="light">
+            {category}
+          </Badge>
+        </Stack>
+      </Group>
+
+      <Text size="sm" c="dimmed" lineClamp={2}>
+        {description}
+      </Text>
+
+      <Stack gap="xs" mt="md">
+        <Text size="sm" fw={500}>
+          📍 {location_name}
+        </Text>
+        {connectedIncidentId && (
+          <Text size="xs" c="gray">
+            Linked to Incident:{" "}
+            <Anchor onClick={() => checkIncidentId?.(connectedIncidentId)}>
+              #{connectedIncidentId}
+            </Anchor>
+          </Text>
+        )}
+      </Stack>
+
+      {/* Admin Status Changer (Completed from your dangling code) */}
+      {onChangeStatus && (
+        <Select
           mt="md"
-          pt="md"
-          style={{ borderTop: "1px solid #eee" }}
-        >
-          <Button size="xs" variant="light" color="red" onClick={onDelete}>
-            Delete
-          </Button>
-        </Group>
+          label="Update Status"
+          value={statusVal}
+          onChange={(val) => {
+            if (!val) return;
+            setStatusVal(val);
+            onChangeStatus(val);
+          }}
+          data={[
+            { value: "pending", label: "Pending" },
+            { value: "in-progress", label: "In Progress" },
+            { value: "resolved", label: "Resolved" },
+          ]}
+        />
       )}
+
+      {/* Footer Actions (Voting, Select, or Delete) */}
+      {renderFooterActions()}
     </Card>
   );
 }
