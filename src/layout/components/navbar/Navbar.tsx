@@ -8,6 +8,7 @@ import {
   Group,
   Text,
   Avatar,
+  useMantineColorScheme,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useState } from "react";
@@ -21,6 +22,7 @@ export default function Navbar({
   const location = useLocation();
   const [loading, setLoading] = useState<boolean>(false);
   const [opened, { open, close }] = useDisclosure(false);
+  const {colorScheme, toggleColorScheme} = useMantineColorScheme();
   const links = {
     user: ["submit-reports", "my-reports", "community-reports"],
     admin: ["dashboard"],
@@ -82,6 +84,9 @@ export default function Navbar({
             />
             <Text>{session?.user.email}</Text>
           </Group>
+          <Button onClick={() => toggleColorScheme()} variant = "default" radius = "md" >
+            {colorScheme === "dark" ? "Light Mode":"Dark Mode"}
+          </Button>
           <Button onClick={open} color="red" variant="light" radius="md">
             Logout
           </Button>

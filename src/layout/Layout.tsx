@@ -1,40 +1,32 @@
 import Navbar from "@/layout/components/navbar";
-import { AppShell, Burger, Group } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import { useEffect } from "react";
+import NavbarMobile from "@/layout/components/navbar-mobile/NavbarMobile";
+import { AppShell, Box } from "@mantine/core";
 import { Outlet } from "react-router";
 
 export default function Layout() {
-  const [opened, { toggle }] = useDisclosure();
-  const closeOnMobile = () => {
-    if (window.innerWidth < 768) {
-      toggle();
-    }
-  };
-  useEffect(() => {}, []);
   return (
-    <AppShell
-      padding="md"
-      header={{ height: 60 }}
-      navbar={{
-        width: 300,
-        breakpoint: "sm",
-        collapsed: { mobile: !opened, desktop: !opened },
-      }}
-    >
-      <AppShell.Header>
-        <Group p="md" h={"100%"} align="center">
-          <Burger opened={opened} onClick={toggle} size="sm" />
-        </Group>
-      </AppShell.Header>
+      <AppShell
+          padding="md"
+          navbar={{
+            width: 280,
+            breakpoint: "sm",
+            collapsed: { mobile: true }, // 1. Hides sidebar on mobile 📱
+          }}
+      >
+        {/* 💻 Desktop: Left Sidebar */}
+        <AppShell.Navbar p="md">
+          <Navbar closeOnMobile={() => {}} />
+        </AppShell.Navbar>
 
-      <AppShell.Navbar>
-        <Navbar closeOnMobile={closeOnMobile} />
-      </AppShell.Navbar>
+        {/* 📄 Page Content */}
+        <AppShell.Main pb={80}>
+          <Outlet />
+        </AppShell.Main>
 
-      <AppShell.Main>
-        <Outlet />
-      </AppShell.Main>
-    </AppShell>
+        {/* 📱 Mobile: Bottom Navigation Bar */}
+        <Box hiddenFrom="sm">
+          <NavbarMobile />
+        </Box>
+      </AppShell>
   );
 }
