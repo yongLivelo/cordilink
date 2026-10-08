@@ -7,17 +7,21 @@ import {
   Group,
   Pagination,
   Text,
+  Modal,
 } from "@mantine/core";
 import { useEffect, useState, useMemo } from "react";
-import type { Report } from "@/types/report";
+import type { Incident, Report } from "@/types/report";
 import ReportCard from "@/components/ReportCard";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
+import { useDisclosure } from "@mantine/hooks";
 
 const ITEMS_PER_PAGE = 2;
 
 export default function MyReports() {
   const { session } = useAuth();
+  const [incident, setIncident] = useState<null | Incident>(null);
+  const [opened, { open, close }] = useDisclosure(false);
   const [myReports, setMyReports] = useState<Report[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -122,6 +126,22 @@ export default function MyReports() {
     currentPage * ITEMS_PER_PAGE,
   );
 
+  const checkIncidentId = async (incidentId: number) => {
+    const { data, error } = await supabase
+      .from("incident")
+      .select("*")
+      .eq("id", incidentId)
+      .maybeSingle();
+
+    if (error) {
+      console.error("error fetching incident: ", error);
+      return;
+    }
+
+    setIncident(data);
+    open();
+  };
+
   return (
     <Stack>
       {/* Controls Section */}
@@ -168,8 +188,20 @@ export default function MyReports() {
               onDelete={() =>
                 handleDelete(reportItem.id, reportItem.incident_id)
               }
+              checkIncidentId={checkIncidentId}
             />
           ))}
+
+          {incident && (
+            <Modal
+              opened={opened}
+              onClose={close}
+              title="Incident Details"
+              centered
+            >
+              <ReportCard report={incident} />
+            </Modal>
+          )}
 
           {totalPages > 1 && (
             <Center mt="xl">

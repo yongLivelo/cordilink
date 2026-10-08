@@ -19,6 +19,7 @@ interface ReportCardProps {
   onDelete?: () => void;
   onSelect?: () => void;
   onChangeStatus?: (newStatus: string) => void;
+  checkIncidentId?: (incidentId: number) => void;
 }
 
 export default function ReportCard({
@@ -26,6 +27,7 @@ export default function ReportCard({
   onDelete,
   onSelect,
   onChangeStatus,
+  checkIncidentId,
 }: ReportCardProps) {
   const { session } = useAuth();
 
@@ -255,8 +257,8 @@ export default function ReportCard({
         )}
 
         <Stack>
-          <Badge color={statusColors[status] || "gray"} variant="light">
-            {status}
+          <Badge color={statusColors[statusVal] || "gray"} variant="light">
+            {statusVal}
           </Badge>
           <Badge color={statusColors[category] || "gray"} variant="light">
             {category}
@@ -274,7 +276,10 @@ export default function ReportCard({
         </Text>
         {connectedIncidentId && (
           <Text size="xs" c="gray">
-            Linked to Incident: <Anchor>#{connectedIncidentId}</Anchor>
+            Linked to Incident:{" "}
+            <Anchor onClick={() => checkIncidentId?.(connectedIncidentId)}>
+              #{connectedIncidentId}
+            </Anchor>
           </Text>
         )}
       </Stack>
