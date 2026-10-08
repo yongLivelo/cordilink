@@ -54,12 +54,22 @@ export default function MyReports() {
 
   // Handle report deletion from database and local state
   const handleDelete = async (
-    reportId: number | string,
+    reportId: number,
     incidentId: number | string,
+    imageUrl: string,
   ) => {
     if (!confirm("Are you sure you want to delete this report?")) return;
 
     const { error } = await supabase.from("report").delete().eq("id", reportId);
+
+    // 2. Delete the file from Supabase Storage
+    const { error: storageError } = await supabase.storage
+      .from("report_images")
+      .remove([imageUrl]);
+    if (storageError) {
+      console.error("Error deleting image", error);
+    }
+
     supabase.functions
       .invoke("summarize-incident", {
         body: { incidentId: incidentId },
@@ -166,7 +176,11 @@ export default function MyReports() {
               key={reportItem.id}
               report={reportItem}
               onDelete={() =>
-                handleDelete(reportItem.id, reportItem.incident_id)
+                handleDelete(
+                  reportItem.id,
+                  reportItem.incident_id,
+                  reportItem.image_url,
+                )
               }
             />
           ))}
