@@ -106,19 +106,25 @@ export default function Dashboard() {
     currentPage * ITEMS_PER_PAGE,
   );
 
-  const handleDelete = async (reportId: number | string) => {
+  const handleDelete = async (incidentId: number | string) => {
     if (!confirm("Are you sure you want to delete this report?")) return;
 
     const { error } = await supabase
-      .from("incident")
+      .from("report")
       .delete()
-      .eq("id", reportId);
+      .eq("incident_id", incidentId);
+
+    supabase.functions
+      .invoke("summarize-incident", {
+        body: { incidentId: incidentId },
+      })
+      .catch((err) => console.error("Summarization check failed:", err));
     if (error) {
       console.error("Error deleting report:", error);
       alert("Failed to delete the report.");
     } else {
       // Filter out the deleted report from local state instantly
-      setIncidents((prev) => prev.filter((report) => report.id !== reportId));
+      setIncidents((prev) => prev.filter((report) => report.id !== incidentId));
     }
   };
 
@@ -126,9 +132,15 @@ export default function Dashboard() {
     console.log(newStatus);
     const { error } = await supabase
       .from("incident")
-      .upsert({ id: reportId, status: newStatus });
+      .update({ status: newStatus })
+      .eq("id", reportId);
 
-    if (error) {
+    const { error: reportError } = await supabase
+      .from("report")
+      .update({ status: newStatus })
+      .eq("incident_id", reportId);
+
+    if (error && reportError) {
       console.error("error changing status: ", error);
     }
   };
@@ -179,7 +191,6 @@ export default function Dashboard() {
               report={reportItem}
               onDelete={() => handleDelete(reportItem.id)}
               onChangeStatus={(newStatus) => {
-                console.log(newStatus);
                 handleChangeStatus(reportItem.id, newStatus);
               }}
             />

@@ -42,7 +42,6 @@ export default function ReportCard({
     status,
   } = report;
 
-  const displayTitle = isIncident ? report.title : `${category} Report`;
   const connectedIncidentId = !isIncident
     ? (report as Report).incident_id
     : null;
@@ -186,7 +185,16 @@ export default function ReportCard({
         </Group>
       );
     }
-
+    // Case 3: Personal Report view (Delete action)
+    if (onDelete) {
+      return (
+        <Group justify="flex-end" {...footerProps}>
+          <Button size="xs" variant="light" color="red" onClick={onDelete}>
+            Delete
+          </Button>
+        </Group>
+      );
+    }
     // Case 2: Incident view (Community voting)
     if (isIncident) {
       return (
@@ -222,17 +230,6 @@ export default function ReportCard({
       );
     }
 
-    // Case 3: Personal Report view (Delete action)
-    if (onDelete) {
-      return (
-        <Group justify="flex-end" {...footerProps}>
-          <Button size="xs" variant="light" color="red" onClick={onDelete}>
-            Delete
-          </Button>
-        </Group>
-      );
-    }
-
     return null;
   };
 
@@ -251,12 +248,20 @@ export default function ReportCard({
       </Card.Section>
 
       <Group justify="space-between" mt="md" mb="xs">
-        <Text fw={700} size="lg">
-          {displayTitle}
-        </Text>
-        <Badge color={statusColors[status] || "gray"} variant="light">
-          {status}
-        </Badge>
+        {isIncident && (
+          <Text fw={700} size="lg">
+            {report.title}
+          </Text>
+        )}
+
+        <Stack>
+          <Badge color={statusColors[status] || "gray"} variant="light">
+            {status}
+          </Badge>
+          <Badge color={statusColors[category] || "gray"} variant="light">
+            {category}
+          </Badge>
+        </Stack>
       </Group>
 
       <Text size="sm" c="dimmed" lineClamp={2}>
