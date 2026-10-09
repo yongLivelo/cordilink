@@ -37,7 +37,6 @@ export default function Home() {
   const [reports, setReports] = useState<Report[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [activeCategoryFilter, setActiveCategoryFilter] =
     useState<string>("All");
 
@@ -121,9 +120,6 @@ export default function Home() {
     }
 
     // 2. Status Filter
-    if (selectedStatus !== "all") {
-      result = result.filter((r) => r.status === selectedStatus);
-    }
 
     // 3. Search Query
     if (searchQuery.trim() !== "") {
@@ -137,7 +133,7 @@ export default function Home() {
     }
 
     return result;
-  }, [reports, searchQuery, selectedStatus, activeCategoryFilter]);
+  }, [reports, searchQuery, activeCategoryFilter]);
 
   // For Admin accounts: only the Dashboard is visible on screen!
   // (kept below all hooks — they must run unconditionally on every render)
@@ -559,88 +555,6 @@ export default function Home() {
         py={{ base: "xl", md: 36 }}
       >
         {/* Section Header & Status Filters */}
-        <Group
-          justify="space-between"
-          align="flex-end"
-          mb="lg"
-          wrap="wrap"
-          gap="md"
-        >
-          <Box>
-            <Title
-              order={2}
-              size="h3"
-              fw={900}
-              c={BRAND.navy}
-              tt="uppercase"
-              style={{ letterSpacing: "0.5px" }}
-            >
-              YOUR ACTIVE REPORTS
-            </Title>
-            <Text size="xs" c="dimmed" mt={2}>
-              Track status updates as reports move from Received to In-Progress
-              to Resolved.
-            </Text>
-          </Box>
-
-          {/* Interactive Status Pills */}
-          <Group gap={6}>
-            {[
-              { label: "All Status", value: "all" },
-              { label: "Pending", value: "pending" },
-              { label: "In-Progress", value: "in-progress" },
-              { label: "Resolved", value: "resolved" },
-            ].map((tab) => {
-              const isActive = selectedStatus === tab.value;
-              return (
-                <UnstyledButton
-                  key={tab.value}
-                  onClick={() => setSelectedStatus(tab.value)}
-                  style={{
-                    padding: "6px 14px",
-                    borderRadius: "8px",
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    backgroundColor: isActive ? BRAND.teal : "#EAEFEF",
-                    color: isActive ? "#ffffff" : "#4A5568",
-                    transition: "all 0.15s ease",
-                    cursor: "pointer",
-                  }}
-                >
-                  {tab.label}
-                </UnstyledButton>
-              );
-            })}
-          </Group>
-        </Group>
-
-        {/* Reports Content */}
-        {isLoading ? (
-          <Center py={60}>
-            <Loader color={BRAND.teal} size="lg" />
-          </Center>
-        ) : filteredReports.length > 0 ? (
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="lg">
-            {filteredReports.map((report) => (
-              <ReportCard key={report.id} report={report} />
-            ))}
-          </SimpleGrid>
-        ) : (
-          <Stack align="center" py={50} gap="md">
-            <Text c="dimmed" size="sm">
-              No civic reports currently found under "{selectedStatus}" status.
-            </Text>
-            <Button
-              component={Link}
-              to="/submit-reports"
-              color={BRAND.orange}
-              radius="md"
-              size="sm"
-            >
-              Submit a Civic Report
-            </Button>
-          </Stack>
-        )}
       </Container>
     </Box>
   );

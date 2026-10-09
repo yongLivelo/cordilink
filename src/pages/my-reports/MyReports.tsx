@@ -10,6 +10,9 @@ import {
   Modal,
   useModalsStack,
   Button,
+  Box,
+  Title,
+  UnstyledButton,
 } from "@mantine/core";
 import { useEffect, useState, useMemo } from "react";
 import type { Incident, Report } from "@/types/report";
@@ -17,7 +20,12 @@ import ReportCard from "@/components/ReportCard";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { notifications } from "@mantine/notifications";
-
+const BRAND = {
+  orange: "#FF3900", // Action / Alert / Primary Accent
+  navy: "#003953", // Deep Mountain Navy / Headers
+  teal: "#027F8D", // Mountain Teal / Primary Branding
+  tealDark: "#002B3F", // Deep Navy Dark Gradient Stop
+};
 const ITEMS_PER_PAGE = 2;
 
 export default function MyReports() {
@@ -30,6 +38,7 @@ export default function MyReports() {
   const [reportToDelete, setReportToDelete] = useState<Report | null>(null);
   // Filter, Sort, and Pagination State
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("pending");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<string | null>("latest");
   const [currentPage, setCurrentPage] = useState(1);
@@ -104,7 +113,7 @@ export default function MyReports() {
   // Reset to page 1 whenever filters or sorting change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCategory, sortOrder]);
+  }, [searchQuery, selectedCategory, sortOrder, selectedStatus]);
 
   // Derive available categories dynamically from the fetched data
   const categories = useMemo(() => {
@@ -139,8 +148,12 @@ export default function MyReports() {
       return sortOrder === "latest" ? dateB - dateA : dateA - dateB;
     });
 
+    if (selectedStatus !== "all") {
+      result = result.filter((r) => r?.status === selectedStatus);
+    }
+
     return result;
-  }, [myReports, searchQuery, selectedCategory, sortOrder]);
+  }, [myReports, searchQuery, selectedCategory, sortOrder, selectedStatus]);
 
   // 4. Pagination
   const totalPages = Math.ceil(processedData.length / ITEMS_PER_PAGE);
@@ -167,6 +180,61 @@ export default function MyReports() {
 
   return (
     <Stack>
+      <Group
+        justify="space-between"
+        align="flex-end"
+        mb="lg"
+        wrap="wrap"
+        gap="md"
+      >
+        <Box>
+          {" "}
+          <Title
+            order={2}
+            size="h3"
+            fw={900}
+            c={BRAND.navy}
+            tt="uppercase"
+            style={{ letterSpacing: "0.5px" }}
+          >
+            YOUR ACTIVE REPORTS
+          </Title>
+          <Text size="xs" c="dimmed" mt={2}>
+            Track status updates as reports move from Received to In-Progress to
+            Resolved.
+          </Text>
+        </Box>
+
+        {/* Interactive Status Pills */}
+        <Group gap={6}>
+          {[
+            { label: "All Status", value: "all" },
+            { label: "Pending", value: "pending" },
+            { label: "In-Progress", value: "in-progress" },
+            { label: "Resolved", value: "resolved" },
+          ].map((tab) => {
+            const isActive = selectedStatus === tab.value;
+            return (
+              <UnstyledButton
+                key={tab.value}
+                onClick={() => setSelectedStatus(tab.value)}
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: "8px",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  backgroundColor: isActive ? BRAND.teal : "#EAEFEF",
+                  color: isActive ? "#ffffff" : "#4A5568",
+                  transition: "all 0.15s ease",
+                  cursor: "pointer",
+                }}
+              >
+                {tab.label}
+              </UnstyledButton>
+            );
+          })}
+        </Group>
+      </Group>
       {/* =========================================================================
           DELETE REPORT CONFIRMATION MODAL (registered once for the whole list)
           ========================================================================= */}
