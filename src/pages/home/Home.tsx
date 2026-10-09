@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useMemo } from "react";
 import {
   Box,
   Card,
@@ -7,21 +7,13 @@ import {
   Stack,
   Text,
   Title,
-  TextInput,
   Button,
   Badge,
-  SimpleGrid,
-  Loader,
-  Center,
   Modal,
-  UnstyledButton,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Link, Navigate } from "react-router";
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/lib/supabaseClient";
-import type { Report } from "@/types/report";
-import ReportCard from "@/components/ReportCard";
 
 // CordiLink Branding Palette
 const BRAND = {
@@ -33,12 +25,6 @@ const BRAND = {
 
 export default function Home() {
   const { session, role } = useAuth();
-
-  const [reports, setReports] = useState<Report[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [activeCategoryFilter, setActiveCategoryFilter] =
-    useState<string>("All");
 
   // Emergency 911 Confirmation Modal disclosure
   const [emergencyModalOpened, { open: openEmergency, close: closeEmergency }] =
@@ -72,71 +58,8 @@ export default function Home() {
   }, []);
 
   // Fetch current user's reports from Supabase
-  useEffect(() => {
-    const fetchUserReports = async () => {
-      if (!session?.user?.id) {
-        setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from("report")
-        .select("*")
-        .eq("user_id", session.user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching reports:", error);
-      } else {
-        setReports(data || []);
-      }
-      setIsLoading(false);
-    };
-
-    fetchUserReports();
-  }, [session]);
-
-  // Baguio Civic Categories for quick filtering (from project context)
-  const quickCategories = [
-    "All",
-    "Pothole",
-    "Landslide",
-    "Fallen Debris",
-    "Flooding",
-    "Power Outage",
-    "Waste Management",
-  ];
 
   // Interactive filtering by search, category, and status
-  const filteredReports = useMemo(() => {
-    let result = [...reports];
-
-    // 1. Category Filter
-    if (activeCategoryFilter !== "All") {
-      result = result.filter((r) =>
-        r.category?.toLowerCase().includes(activeCategoryFilter.toLowerCase()),
-      );
-    }
-
-    // 2. Status Filter
-
-    // 3. Search Query
-    if (searchQuery.trim() !== "") {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (r) =>
-          r.category?.toLowerCase().includes(q) ||
-          r.description?.toLowerCase().includes(q) ||
-          r.location_name?.toLowerCase().includes(q),
-      );
-    }
-
-    return result;
-  }, [reports, searchQuery, activeCategoryFilter]);
-
-  // For Admin accounts: only the Dashboard is visible on screen!
-  // (kept below all hooks — they must run unconditionally on every render)
   if (role === "admin") {
     return <Navigate to="/dashboard" replace />;
   }
@@ -276,77 +199,6 @@ export default function Home() {
               non-emergency everyday concerns like damaged roads, fallen debris,
               and public safety hazards directly to local authorities.
             </Text>
-
-            {/* Interactive Search Bar */}
-            <Box mt="xs" maw={640}>
-              <TextInput
-                placeholder="Search active reports, road hazards, or barangay locations..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.currentTarget.value)}
-                radius="md"
-                size="md"
-                styles={{
-                  input: {
-                    backgroundColor: "rgba(255, 255, 255, 0.96)",
-                    color: "#1A202C",
-                    border: "none",
-                    boxShadow: "0 4px 14px rgba(0,0,0,0.15)",
-                    "::placeholder": {
-                      color: "#718096",
-                    },
-                  },
-                }}
-                leftSection={
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke={BRAND.teal}
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <circle cx="11" cy="11" r="8" />
-                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                  </svg>
-                }
-              />
-            </Box>
-
-            {/* Interactive Category Filter Chips */}
-            <Group gap={6} mt={4} wrap="wrap">
-              <Text size="xs" fw={700} c="rgba(255,255,255,0.75)" mr={4}>
-                Filter:
-              </Text>
-              {quickCategories.map((cat) => {
-                const isSelected = activeCategoryFilter === cat;
-                return (
-                  <UnstyledButton
-                    key={cat}
-                    onClick={() => setActiveCategoryFilter(cat)}
-                    style={{
-                      padding: "4px 12px",
-                      borderRadius: "20px",
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      backgroundColor: isSelected
-                        ? BRAND.orange
-                        : "rgba(255, 255, 255, 0.18)",
-                      color: "#ffffff",
-                      border: isSelected
-                        ? "none"
-                        : "1px solid rgba(255, 255, 255, 0.3)",
-                      transition: "all 0.15s ease",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {cat}
-                  </UnstyledButton>
-                );
-              })}
-            </Group>
           </Stack>
         </Container>
       </Box>
