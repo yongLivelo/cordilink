@@ -15,9 +15,9 @@ import {
 import { schemaResolver, useForm } from "@mantine/form";
 
 import Camera from "@/pages/submit-reports/components/Camera";
-import LocationForm from "@/pages/submit-reports/components/LocationForm";
+import LocationForm from "@/components/Location/LocationForm";
 import SimilarIncidentsModal from "@/pages/submit-reports/components/SimilarIncidentsModal";
-import { useReportLocation } from "@/pages/submit-reports/components/useReportLocation";
+import { useReportLocation } from "@/components/Location/useReportLocation";
 import { useReportSubmission } from "@/pages/submit-reports/components/useReportSubmission";
 
 // Brand Color Palette
