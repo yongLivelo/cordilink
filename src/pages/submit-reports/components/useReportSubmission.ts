@@ -128,10 +128,6 @@ export function useReportSubmission({
         // Automatically create a new incident if no matches exist
         const newIncidentId = await createNewIncident(draft);
         await finalizeReportSubmission(newIncidentId, draft);
-        notifications.show({
-          title: "Success",
-          message: "Report submitted",
-        });
       }
     } catch (error) {
       const errorMessage =
@@ -153,10 +149,6 @@ export function useReportSubmission({
     setLoading(true);
     try {
       await finalizeReportSubmission(incidentId, pendingDraft);
-      notifications.show({
-        title: "Success",
-        message: "Report submitted",
-      });
     } catch (error) {
       console.error("Error linking to existing incident:", error);
       alert("Failed to link report to incident.");
@@ -173,10 +165,6 @@ export function useReportSubmission({
     try {
       const newIncidentId = await createNewIncident(pendingDraft);
       await finalizeReportSubmission(newIncidentId, pendingDraft);
-      notifications.show({
-        title: "Success",
-        message: "Report submitted",
-      });
     } catch (error) {
       console.error("Error creating new incident:", error);
     } finally {
