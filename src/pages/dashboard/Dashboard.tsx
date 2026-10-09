@@ -184,7 +184,7 @@ export default function Dashboard() {
       );
     }
   };
-  const [opened, { open, close }] = useDisclosure();
+  const [opened, { close }] = useDisclosure();
   const [logoutModalOpened, { open: openLogout, close: closeLogout }] =
     useDisclosure(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -584,6 +584,7 @@ export default function Dashboard() {
                       ></Button>
                     </Modal>
                     <ReportCard
+                      showCommunity={true}
                       key={incidentItem.id}
                       report={incidentItem}
                       onDelete={() => handleDelete(incidentItem.id)}

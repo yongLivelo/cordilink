@@ -10,6 +10,7 @@ import {
   Box,
   Avatar,
   ActionIcon,
+  Skeleton,
 } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
@@ -18,6 +19,7 @@ import type { Report, Incident } from "@/types/report";
 
 interface ReportCardProps {
   report: Report | Incident;
+  showCommunity?: boolean;
   onDelete?: () => void;
   onSelect?: () => void;
   onChangeStatus?: (newStatus: string) => void;
@@ -26,6 +28,7 @@ interface ReportCardProps {
 
 export default function ReportCard({
   report,
+  showCommunity = false,
   onDelete,
   onSelect,
   onChangeStatus,
@@ -35,14 +38,13 @@ export default function ReportCard({
 
   // 1. Derived Variables
   const isIncident = "title" in report;
-  const {
-    id,
-    image_url: image,
-    description,
-    category,
-    location_name,
-    created_at,
-  } = report;
+  const { id, image_url: image, description, category, created_at } = report;
+
+  // Handle differences in location field key between Report & Incident
+  const locationName =
+    "location_name" in report
+      ? report.location_name
+      : (report as Incident).location;
 
   const connectedIncidentId = !isIncident
     ? (report as Report).incident_id
@@ -50,7 +52,7 @@ export default function ReportCard({
 
   const displayTitle = isIncident
     ? report.title
-    : `${category} Incident Report`;
+    : `${category || "General"} Incident Report`;
 
   // Status Color Mapping
   const statusColors: Record<string, { bg: string; text: string }> = {
@@ -59,79 +61,88 @@ export default function ReportCard({
     resolved: { bg: "#2B8A3E", text: "#fff" }, // Forest Green
   };
 
-  // ==========================================
-  // 2. State
-  // ==========================================
-  //
-  //
   const formattedDate = created_at
     ? new Date(created_at).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
       })
     : "Recent";
+
+  // 2. State
   const [loading, setLoading] = useState(false);
-  const [isCommunity, setIsCommunity] = useState<boolean>(false);
+  const [isCommunity, setIsCommunity] = useState<boolean>(showCommunity);
   const [statusVal, setStatusVal] = useState<string>("");
-  useEffect(() => {
-    if (isIncident) {
-      setStatusVal(report.status);
-      return;
-    }
-    const fetchStatus = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("incident")
-        .select("status")
-        .eq("id", report.incident_id)
-        .maybeSingle();
-
-      const { data: isCommunityData, error: isCommunityError } = await supabase
-        .from("incident")
-        .select("is_community_report")
-        .eq("id", report.incident_id)
-        .maybeSingle();
-
-      if (error && isCommunityError) {
-        console.error("Error getting incident status: ", error);
-      }
-      if (data && isCommunityData) {
-        setIsCommunity(isCommunityData?.is_community_report);
-        setStatusVal(data?.status);
-      }
-
-      setLoading(false);
-    };
-
-    fetchStatus();
-  }, []);
-
   const [score, setScore] = useState<number>(0);
   const [currentVote, setCurrentVote] = useState<"up" | "down" | "none">(
     "none",
   );
   const [isVoting, setIsVoting] = useState(false);
 
-  // 3. Effects: Fetch Votes
+  // Sync initial status & fetch incident details if needed
+  useEffect(() => {
+    let isMounted = true;
+
+    if (showCommunity && "is_community_report" in report) {
+      setIsCommunity(report.is_community_report);
+    }
+
+    if (isIncident) {
+      setStatusVal(report.status || "pending");
+      return;
+    }
+
+    const fetchStatus = async () => {
+      if (!report.incident_id) return;
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from("incident")
+        .select("status, is_community_report")
+        .eq("id", report.incident_id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error getting incident status:", error);
+      } else if (data && isMounted) {
+        if (data.is_community_report !== undefined) {
+          setIsCommunity(data.is_community_report);
+        }
+        if (data.status) {
+          setStatusVal(data.status);
+        }
+      }
+
+      if (isMounted) setLoading(false);
+    };
+
+    fetchStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [report, isIncident, showCommunity]);
+
+  // 3. Fetch Votes Effect
   useEffect(() => {
     if (!isIncident) return;
+    let isMounted = true;
 
     const fetchVotes = async () => {
       const { count: upCount } = await supabase
         .from("vote")
         .select("*", { count: "exact", head: true })
         .eq("incident_id", id)
-        .eq("vote_type", "up")
-        .maybeSingle();
+        .eq("vote_type", "up");
 
       const { count: downCount } = await supabase
         .from("vote")
         .select("*", { count: "exact", head: true })
         .eq("incident_id", id)
-        .eq("vote_type", "down")
-        .maybeSingle();
+        .eq("vote_type", "down");
 
-      setScore((upCount || 0) - (downCount || 0));
+      if (isMounted) {
+        setScore((upCount || 0) - (downCount || 0));
+      }
 
       if (session?.user?.id) {
         const { data } = await supabase
@@ -141,13 +152,17 @@ export default function ReportCard({
           .eq("user_id", session.user.id)
           .maybeSingle();
 
-        if (data) {
+        if (data && isMounted) {
           setCurrentVote(data.vote_type as "up" | "down");
         }
       }
     };
 
     fetchVotes();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id, isIncident, session]);
 
   // 4. Vote Handler
@@ -348,40 +363,46 @@ export default function ReportCard({
         e.currentTarget.style.borderColor = "#E5ECEE";
       }}
     >
-      {/* =========================================================================
-          IMAGE CONTAINER WITH FLOATING OVERLAY PILLS (Reference Image Inspired)
-          ========================================================================= */}
+      {/* Image Container with Overlay Pills */}
       <Card.Section style={{ position: "relative", overflow: "hidden" }}>
         <Image
           src={image}
           height={190}
-          alt={category}
+          alt={category || "Incident"}
           fallbackSrc="https://placehold.co/600x340/003953/FFFFFF?text=CordiLink+Incident"
           style={{ transition: "transform 0.3s ease" }}
         />
 
-        {/* Top-Left Floating Badge: Status (like "For Sale" in reference image) */}
-        <Box
-          style={{
-            position: "absolute",
-            top: 12,
-            left: 12,
-            backgroundColor: currentStatusStyle.bg,
-            color: currentStatusStyle.text,
-            padding: "4px 12px",
-            borderRadius: 999,
-            fontSize: "11px",
-            fontWeight: 800,
-            textTransform: "uppercase",
-            letterSpacing: "0.5px",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
-            zIndex: 2,
-          }}
-        >
-          {statusVal}
-        </Box>
+        {/* Status Badge (skeleton while the incident status is being fetched) */}
+        {loading ? (
+          <Box style={{ position: "absolute", top: 12, left: 12, zIndex: 2 }}>
+            <Skeleton width={76} height={24} radius={999} />
+          </Box>
+        ) : (
+          statusVal && (
+            <Box
+              style={{
+                position: "absolute",
+                top: 12,
+                left: 12,
+                backgroundColor: currentStatusStyle.bg,
+                color: currentStatusStyle.text,
+                padding: "4px 12px",
+                borderRadius: 999,
+                fontSize: "11px",
+                fontWeight: 800,
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+                zIndex: 2,
+              }}
+            >
+              {statusVal}
+            </Box>
+          )
+        )}
 
-        {/* Top-Right Floating Badge: Category (like "House/Apartment" in reference image) */}
+        {/* Category Badge */}
         <Box
           style={{
             position: "absolute",
@@ -403,7 +424,7 @@ export default function ReportCard({
           {category || "GENERAL"}
         </Box>
 
-        {/* Bottom-Left Floating Highlight Pill */}
+        {/* Highlight Pill */}
         <Box
           style={{
             position: "absolute",
@@ -439,7 +460,7 @@ export default function ReportCard({
           {isIncident && <span>• {score} pts</span>}
         </Box>
 
-        {/* Bottom-Right Floating Action Button */}
+        {/* Connected Incident Floating Button */}
         {connectedIncidentId && (
           <ActionIcon
             variant="default"
@@ -475,11 +496,9 @@ export default function ReportCard({
         )}
       </Card.Section>
 
-      {/* =========================================================================
-          CONTENT AREA: LOCATION, TITLE, DESCRIPTION, META
-          ========================================================================= */}
+      {/* Content Area */}
       <Stack p="md" gap="xs">
-        {/* Location Row with SVG Pin Icon */}
+        {/* Location Row */}
         <Group gap={6} align="center">
           <svg
             width="13"
@@ -496,11 +515,11 @@ export default function ReportCard({
             <circle cx="12" cy="10" r="3" />
           </svg>
           <Text size="xs" fw={700} c="gray.6">
-            {location_name || "Cordillera Administrative Region"}
+            {locationName || "Cordillera Administrative Region"}
           </Text>
         </Group>
 
-        {/* High-Hierarchy Bold Title */}
+        {/* Title */}
         <Text fw={800} size="md" c="#003953" lh={1.25} lineClamp={1}>
           {displayTitle}
         </Text>
@@ -510,7 +529,7 @@ export default function ReportCard({
           {description}
         </Text>
 
-        {/* Reporter & Date Meta Row */}
+        {/* Meta Row */}
         <Group justify="space-between" align="center" pt={4}>
           <Group gap={6} align="center">
             {isCommunity && (
@@ -552,6 +571,7 @@ export default function ReportCard({
           <Select
             mt="xs"
             size="xs"
+            radius="md"
             label="Admin: Update Status"
             value={statusVal}
             onChange={(val) => {
@@ -567,7 +587,7 @@ export default function ReportCard({
           />
         )}
 
-        {/* Footer Actions (Upvote/Downvote/Delete/Select) */}
+        {/* Footer Actions */}
         {renderFooterActions()}
       </Stack>
     </Card>
