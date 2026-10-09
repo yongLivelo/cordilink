@@ -69,9 +69,13 @@ export default function LocationForm({
         <>
           <Button
             variant="light"
+            color="#027F8D"
+            radius="md"
+            fw={700}
             onClick={location.requestLocation}
             loading={location.locating}
             disabled={location.permissionDenied}
+            leftSection={<PinIcon size={18} />}
           >
             Use my current location
           </Button>

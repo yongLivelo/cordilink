@@ -9,11 +9,20 @@ import {
   Card,
   Title,
   Anchor,
+  Image,
+  Box,
 } from "@mantine/core";
 import { schemaResolver, useForm } from "@mantine/form";
 import { useState } from "react";
 import { Link } from "react-router";
 import { z } from "zod/v4";
+
+// CordiLink Branding Palette
+const BRAND = {
+  orange: "#FF3900", // Call-to-action buttons
+  navy: "#003953",   // Headings and high-contrast text
+  teal: "#027F8D",   // Links, highlights, and secondary accents
+};
 
 const schema = z.object({
   email: z.string().email({ message: "Invalid email" }),
@@ -55,53 +64,100 @@ export default function Signup() {
   };
 
   return (
-    <Container size={420} my={40}>
-      <Title ta="center" order={2}>
-        Create an Account
-      </Title>
+    <Box
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#F4F7F6",
+      }}
+      px={{ base: "md", sm: "lg" }}
+      py="xl"
+    >
+      <Container size={420} w="100%" p={0}>
+        {/* BRANDING HEADER: Logo + Brand Identity */}
+        <Stack align="center" gap="xs" mb="lg">
+          <Image
+            src="/Cordilink_logo.svg"
+            alt="CordiLink Logo"
+            w={{ base: 64, sm: 80 }}
+            fit="contain"
+          />
+          <Title order={1} size="h2" fw={900} c={BRAND.navy} ta="center">
+            CordiLink
+          </Title>
+          <Text size="sm" c="dimmed" ta="center">
+            Empowering residents to reach proper authorities instantly.
+          </Text>
+        </Stack>
 
-      <Text c="dimmed" size="sm" ta="center" mt={5} mb={30}>
-        Already have an account?{" "}
-        <Anchor component={Link} to="/login" size="sm">
-          Login
-        </Anchor>
-      </Text>
+        {/* SIGNUP CARD */}
+        <Card
+          withBorder
+          shadow="sm"
+          radius="lg"
+          p={{ base: "md", sm: "xl" }}
+        >
+          <Title order={3} size="h3" fw={700} c={BRAND.navy} mb="xs">
+            Create an Account
+          </Title>
 
-      <Card withBorder shadow="md" p={30} radius="md">
-        <form onSubmit={form.onSubmit(handleSubmit)}>
-          <Stack>
-            <TextInput
-              label="Email"
-              placeholder="you@email.com"
-              withAsterisk
-              key={form.key("email")}
-              {...form.getInputProps("email")}
-            />
-            <PasswordInput
-              label="Password"
-              placeholder="Your password"
-              withAsterisk
-              key={form.key("password")}
-              {...form.getInputProps("password")}
-            />
+          <Text size="sm" c="dimmed" mb="lg">
+            Already have an account?{" "}
+            <Anchor component={Link} to="/login" size="sm" fw={600} c={BRAND.teal}>
+              Log In
+            </Anchor>
+          </Text>
 
-            {errorMessage && (
-              <Text c="red" size="sm">
-                {errorMessage}
-              </Text>
-            )}
-            {message && (
-              <Text c="green" size="sm">
-                {message}
-              </Text>
-            )}
+          <form onSubmit={form.onSubmit(handleSubmit)}>
+            <Stack gap="md">
+              <TextInput
+                label="Email"
+                placeholder="you@email.com"
+                withAsterisk
+                radius="md"
+                size="md"
+                key={form.key("email")}
+                {...form.getInputProps("email")}
+              />
 
-            <Button type="submit" fullWidth mt="xl" loading={isLoading}>
-              Signup
-            </Button>
-          </Stack>
-        </form>
-      </Card>
-    </Container>
+              <PasswordInput
+                label="Password"
+                placeholder="Your password"
+                withAsterisk
+                radius="md"
+                size="md"
+                key={form.key("password")}
+                {...form.getInputProps("password")}
+              />
+
+              {errorMessage && (
+                <Text c="red" size="sm">
+                  {errorMessage}
+                </Text>
+              )}
+              {message && (
+                <Text c="teal" size="sm" fw={600}>
+                  {message}
+                </Text>
+              )}
+
+              <Button
+                type="submit"
+                fullWidth
+                size="md"
+                radius="md"
+                mt="md"
+                loading={isLoading}
+                color={BRAND.orange}
+              >
+                Sign Up
+              </Button>
+            </Stack>
+          </form>
+        </Card>
+      </Container>
+    </Box>
   );
 }

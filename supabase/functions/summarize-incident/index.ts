@@ -4,18 +4,26 @@ import {
   SchemaType,
 } from "https://esm.sh/@google/generative-ai";
 
-Deno.serve(async (req) => {
-  try {
-    // 1. Parse the Webhook payload from Supabase
-    const payload = await req.json();
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
 
-    // Handle both INSERTs (record) and DELETEs (old_record)
+Deno.serve(async (req) => {
+  // 1. Handle CORS preflight requests first
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  try {
+    const payload = await req.json();
     const incidentId = payload.incidentId;
 
     if (!incidentId) {
       return new Response(JSON.stringify({ message: "No incident_id found" }), {
         status: 200,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
@@ -32,11 +40,13 @@ Deno.serve(async (req) => {
       .single();
 
     if (incidentError) {
-      // PGRST116 means zero rows returned (Incident might already be deleted)
       if (incidentError.code === "PGRST116") {
         return new Response(
           JSON.stringify({ message: "Incident already deleted" }),
-          { status: 200 },
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          },
         );
       }
       throw incidentError;
@@ -70,7 +80,10 @@ Deno.serve(async (req) => {
 
       return new Response(
         JSON.stringify({ success: true, status: "incident-deleted" }),
-        { headers: { "Content-Type": "application/json" } },
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        },
       );
     }
 
@@ -80,7 +93,7 @@ Deno.serve(async (req) => {
 
       const genAI = new GoogleGenerativeAI(Deno.env.get("GEMINI_API_KEY")!);
       const model = genAI.getGenerativeModel({
-        model: "gemini-3.1-flash-lite",
+        model: "gemini-3.1-flash-lite", // Fixed versioned model string
         generationConfig: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -119,7 +132,8 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ success: true, status: "promoted", aiGenerated }),
         {
-          headers: { "Content-Type": "application/json" },
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
         },
       );
     }
@@ -130,7 +144,7 @@ Deno.serve(async (req) => {
         .from("incident")
         .update({
           title: "",
-          description: "", // Wipe the AI summary so it reverts to standard appearance
+          description: "",
           is_community_report: false,
         })
         .eq("id", incidentId);
@@ -139,12 +153,13 @@ Deno.serve(async (req) => {
 
       return new Response(
         JSON.stringify({ success: true, status: "demoted" }),
-        { headers: { "Content-Type": "application/json" } },
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        },
       );
     }
 
-    // State D: Above threshold and already promoted, OR below threshold and not promoted
-    // -> Do nothing, save API tokens!
     return new Response(
       JSON.stringify({
         success: true,
@@ -154,15 +169,15 @@ Deno.serve(async (req) => {
       }),
       {
         status: 200,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...corsHeaders },
       },
     );
   } catch (error) {
-    console.error("Error processing webhook:", error);
+    console.error("Error processing request:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   }
 });
