@@ -85,9 +85,7 @@ export async function findNearbyIncidents(
 }
 
 /** Creates a new incident from a draft and returns its id. */
-export async function createNewIncident(
-  draft: ReportDraft,
-): Promise<string | number> {
+export async function createNewIncident(draft: ReportDraft): Promise<number> {
   const { lat, lng, category, locationName, description, imageUrl, embedding } =
     draft;
   const pointLocation = `POINT(${lng} ${lat})`;
