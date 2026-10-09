@@ -143,7 +143,7 @@ export function useReportSubmission({
   };
 
   // Triggered when user clicks "Yes, this is the same incident"
-  const selectExistingIncident = async (incidentId: string | number) => {
+  const selectExistingIncident = async (incidentId: number) => {
     if (!pendingDraft) return;
 
     setLoading(true);
