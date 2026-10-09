@@ -20,8 +20,8 @@ import { z } from "zod/v4";
 // CordiLink Branding Palette
 const BRAND = {
   orange: "#FF3900", // Call-to-action buttons
-  navy: "#003953",   // Headings and high-contrast text
-  teal: "#027F8D",   // Links, highlights, and secondary accents
+  navy: "#003953", // Headings and high-contrast text
+  teal: "#027F8D", // Links, highlights, and secondary accents
 };
 
 const schema = z.object({
@@ -90,19 +90,20 @@ export default function Login() {
         </Stack>
 
         {/* LOGIN CARD */}
-        <Card
-          withBorder
-          shadow="sm"
-          radius="lg"
-          p={{ base: "md", sm: "xl" }}
-        >
+        <Card withBorder shadow="sm" radius="lg" p={{ base: "md", sm: "xl" }}>
           <Title order={3} size="h3" fw={700} c={BRAND.navy} mb="xs">
             Welcome Back
           </Title>
 
           <Text size="sm" c="dimmed" mb="lg">
             Need an account?{" "}
-            <Anchor component={Link} to="/signup" size="sm" fw={600} c={BRAND.teal}>
+            <Anchor
+              component={Link}
+              to="/signup"
+              size="sm"
+              fw={600}
+              c={BRAND.teal}
+            >
               Sign Up
             </Anchor>
           </Text>
