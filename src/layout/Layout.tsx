@@ -1,40 +1,47 @@
 import Navbar from "@/layout/components/navbar";
-import { AppShell, Burger, Group } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import { useEffect } from "react";
-import { Outlet } from "react-router";
+import NavbarMobile from "@/layout/components/navbar-mobile/NavbarMobile";
+import { AppShell, Box } from "@mantine/core";
+import { Outlet, useLocation } from "react-router";
 
 export default function Layout() {
-  const [opened, { toggle }] = useDisclosure();
-  const closeOnMobile = () => {
-    if (window.innerWidth < 768) {
-      toggle();
-    }
-  };
-  useEffect(() => {}, []);
+  const location = useLocation();
+  const isFullSpan = location.pathname === "/" || location.pathname === "/dashboard";
+
   return (
     <AppShell
-      padding="md"
-      header={{ height: 60 }}
+      padding={0}
       navbar={{
-        width: 300,
+        width: { sm: 260, md: 280 },
         breakpoint: "sm",
-        collapsed: { mobile: !opened, desktop: !opened },
+        collapsed: { mobile: true }, // Hides sidebar on mobile 📱
+      }}
+      styles={{
+        main: {
+          backgroundColor: "#F7FAFA",
+          minHeight: "100vh",
+        },
       }}
     >
-      <AppShell.Header>
-        <Group p="md" h={"100%"} align="center">
-          <Burger opened={opened} onClick={toggle} size="sm" />
-        </Group>
-      </AppShell.Header>
-
-      <AppShell.Navbar>
-        <Navbar closeOnMobile={closeOnMobile} />
+      {/* 💻 Desktop: Left Sidebar */}
+      <AppShell.Navbar p={0} style={{ borderRight: "1px solid #E5ECEE" }}>
+        <Navbar closeOnMobile={() => {}} />
       </AppShell.Navbar>
 
-      <AppShell.Main>
-        <Outlet />
+      {/* 📄 Page Content */}
+      <AppShell.Main pb={{ base: 80, sm: 30 }}>
+        {isFullSpan ? (
+          <Outlet />
+        ) : (
+          <Box p={{ base: "md", sm: "xl" }} maw={1280} mx="auto">
+            <Outlet />
+          </Box>
+        )}
       </AppShell.Main>
+
+      {/* 📱 Mobile: Bottom Navigation Bar */}
+      <Box hiddenFrom="sm">
+        <NavbarMobile />
+      </Box>
     </AppShell>
   );
 }
