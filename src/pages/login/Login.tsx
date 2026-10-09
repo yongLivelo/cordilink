@@ -85,7 +85,7 @@ export default function Login() {
             CordiLink
           </Title>
           <Text size="sm" c="dimmed" ta="center">
-            Empowering Communities, Reporting Together
+            Empowering residents to reach proper authorities instantly.
           </Text>
         </Stack>
 
