@@ -51,9 +51,10 @@ export default function MyReports() {
       }
 
       setIsLoading(true);
+      // Fetch report data AND the status from the linked incident table
       const { data, error } = await supabase
         .from("report")
-        .select("*")
+        .select("*, incident(status)")
         .eq("user_id", session.user.id);
 
       if (error) {
@@ -149,7 +150,7 @@ export default function MyReports() {
     });
 
     if (selectedStatus !== "all") {
-      result = result.filter((r) => r?.status === selectedStatus);
+      result = result.filter((r: any) => r.incident?.status === selectedStatus);
     }
 
     return result;
