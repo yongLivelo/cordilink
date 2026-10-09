@@ -11,6 +11,7 @@ import {
 } from "../services";
 import type { ReportDraft } from "../types";
 import type { ReportLocation } from "./LocationSchema";
+import { notifications } from "@mantine/notifications";
 
 interface UseReportSubmissionOptions {
   /** Called after a report is saved so the caller can reset its form. */
@@ -64,7 +65,10 @@ export function useReportSubmission({
     // 4. Let the caller reset its form elements and trigger camera wipe
     onSubmitted();
 
-    alert("Report and image submitted successfully!");
+    notifications.show({
+      title: "Success",
+      message: "Report submitted",
+    });
   };
 
   /**
@@ -124,12 +128,19 @@ export function useReportSubmission({
         // Automatically create a new incident if no matches exist
         const newIncidentId = await createNewIncident(draft);
         await finalizeReportSubmission(newIncidentId, draft);
+        notifications.show({
+          title: "Success",
+          message: "Report submitted",
+        });
       }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       console.error("Error submitting report:", errorMessage);
-      alert(errorMessage);
+      notifications.show({
+        title: "Error submitting report:",
+        message: errorMessage,
+      });
     } finally {
       setLoading(false);
     }
@@ -142,6 +153,10 @@ export function useReportSubmission({
     setLoading(true);
     try {
       await finalizeReportSubmission(incidentId, pendingDraft);
+      notifications.show({
+        title: "Success",
+        message: "Report submitted",
+      });
     } catch (error) {
       console.error("Error linking to existing incident:", error);
       alert("Failed to link report to incident.");
@@ -158,9 +173,12 @@ export function useReportSubmission({
     try {
       const newIncidentId = await createNewIncident(pendingDraft);
       await finalizeReportSubmission(newIncidentId, pendingDraft);
+      notifications.show({
+        title: "Success",
+        message: "Report submitted",
+      });
     } catch (error) {
       console.error("Error creating new incident:", error);
-      alert("Failed to create new incident.");
     } finally {
       setLoading(false);
     }

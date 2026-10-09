@@ -80,7 +80,11 @@ export default function SubmitReports() {
   };
 
   return (
-    <Container size="sm" py={{ base: "md", sm: "xl" }} px={{ base: "xs", sm: "md" }}>
+    <Container
+      size="sm"
+      py={{ base: "md", sm: "xl" }}
+      px={{ base: "xs", sm: "md" }}
+    >
       {/* BRANDING HEADER */}
       <Stack gap="xs" mb="lg">
         <Group justify="space-between" align="center">
@@ -96,8 +100,9 @@ export default function SubmitReports() {
           File a Civic Hazard Report
         </Title>
         <Text size="xs" c="dimmed">
-          Capture photo evidence and tag GPS coordinates. Reports are automatically deduplicated
-          and routed directly to responsible municipal offices.
+          Capture photo evidence and tag GPS coordinates. Reports are
+          automatically deduplicated and routed directly to responsible
+          municipal offices.
         </Text>
       </Stack>
 
@@ -131,6 +136,7 @@ export default function SubmitReports() {
                 2. Incident Description
               </Text>
               <Textarea
+                key={form.key("description")}
                 description="State clearly what happened and its community impact."
                 placeholder={
                   "What: Landslide debris blocking one lane\n" +
@@ -148,7 +154,10 @@ export default function SubmitReports() {
               <Text fw={700} size="sm" c={BRAND.navy} mb={6}>
                 3. Barangay & GPS Location
               </Text>
-              <LocationForm location={reportLocation} description={description} />
+              <LocationForm
+                location={reportLocation}
+                description={description}
+              />
             </Box>
 
             {/* Submit Action Button */}
@@ -165,7 +174,17 @@ export default function SubmitReports() {
                 boxShadow: "0 4px 14px rgba(255, 57, 0, 0.35)",
               }}
               leftSection={
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#fff"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
                   <line x1="22" y1="2" x2="11" y2="13" />
                   <polygon points="22 2 15 22 11 13 2 9 22 2" />
                 </svg>

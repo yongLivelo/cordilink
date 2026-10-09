@@ -91,6 +91,7 @@ export async function createNewIncident(
   const { lat, lng, category, locationName, description, imageUrl, embedding } =
     draft;
   const pointLocation = `POINT(${lng} ${lat})`;
+  console.log(description);
 
   const { data, error } = await supabase
     .from("incident")

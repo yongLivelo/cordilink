@@ -8,29 +8,31 @@ import {
   Pagination,
   Text,
   Modal,
+  useModalsStack,
+  Button,
 } from "@mantine/core";
 import { useEffect, useState, useMemo } from "react";
 import type { Incident, Report } from "@/types/report";
 import ReportCard from "@/components/ReportCard";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
-import { useDisclosure } from "@mantine/hooks";
+import { notifications } from "@mantine/notifications";
 
 const ITEMS_PER_PAGE = 2;
 
 export default function MyReports() {
   const { session } = useAuth();
   const [incident, setIncident] = useState<null | Incident>(null);
-  const [opened, { open, close }] = useDisclosure(false);
   const [myReports, setMyReports] = useState<Report[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
+  const stack = useModalsStack(["incident", "delete"]);
+  // Which report the delete-confirmation modal is targeting
+  const [reportToDelete, setReportToDelete] = useState<Report | null>(null);
   // Filter, Sort, and Pagination State
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<string | null>("latest");
   const [currentPage, setCurrentPage] = useState(1);
-
   // Fetch reports from Supabase filtered by the current user's ID
   useEffect(() => {
     const fetchUserReports = async () => {
@@ -62,8 +64,6 @@ export default function MyReports() {
     incidentId: number | string,
     imageUrl: string,
   ) => {
-    if (!confirm("Are you sure you want to delete this report?")) return;
-
     const { error } = await supabase.from("report").delete().eq("id", reportId);
 
     // 2. Delete the file from Supabase Storage
@@ -84,8 +84,21 @@ export default function MyReports() {
       alert("Failed to delete the report.");
     } else {
       // Filter out the deleted report from local state instantly
+      notifications.show({
+        title: "Success",
+        message: "Report deleted",
+      });
       setMyReports((prev) => prev.filter((report) => report.id !== reportId));
     }
+  };
+
+  // Confirm deletion: close the modal immediately, then delete in the background
+  const confirmDelete = () => {
+    if (!reportToDelete) return;
+    const { id, incident_id, image_url } = reportToDelete;
+    stack.close("delete");
+    setReportToDelete(null);
+    handleDelete(id, incident_id, image_url);
   };
 
   // Reset to page 1 whenever filters or sorting change
@@ -149,11 +162,62 @@ export default function MyReports() {
     }
 
     setIncident(data);
-    open();
+    stack.open("incident");
   };
 
   return (
     <Stack>
+      {/* =========================================================================
+          DELETE REPORT CONFIRMATION MODAL (registered once for the whole list)
+          ========================================================================= */}
+      <Modal
+        {...stack.register("delete")}
+        title="Delete Report"
+        centered
+        radius="md"
+      >
+        <Stack gap="md">
+          <Group gap="sm" align="flex-start">
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#D32F2F"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ flexShrink: 0, marginTop: 2 }}
+            >
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            <div>
+              <Text size="sm" fw={600} mb={2}>
+                Are you sure you want to delete this report?
+              </Text>
+              <Text size="sm" c="dimmed">
+                This action cannot be undone.
+              </Text>
+            </div>
+          </Group>
+
+          <Group justify="flex-end" gap="sm" mt="xs">
+            <Button
+              variant="default"
+              radius="md"
+              onClick={() => stack.close("delete")}
+            >
+              Cancel
+            </Button>
+            <Button color="red" radius="md" onClick={confirmDelete}>
+              Delete Report
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
       {/* Controls Section */}
       <Group align="flex-end">
         <TextInput
@@ -195,21 +259,16 @@ export default function MyReports() {
             <ReportCard
               key={reportItem.id}
               report={reportItem}
-              onDelete={() =>
-                handleDelete(
-                  reportItem.id,
-                  reportItem.incident_id,
-                  reportItem.image_url,
-                )
-              }
+              onDelete={() => {
+                setReportToDelete(reportItem);
+                stack.open("delete");
+              }}
               checkIncidentId={checkIncidentId}
             />
           ))}
-
           {incident && (
             <Modal
-              opened={opened}
-              onClose={close}
+              {...stack.register("incident")}
               title="Incident Details"
               centered
             >

@@ -35,19 +35,28 @@ export default function ReportCard({
 
   // 1. Derived Variables
   const isIncident = "title" in report;
-  const { id, image_url: image, description, category, location_name } = report;
+  const {
+    id,
+    image_url: image,
+    description,
+    category,
+    location_name,
+    created_at,
+  } = report;
 
   const connectedIncidentId = !isIncident
     ? (report as Report).incident_id
     : null;
 
-  const displayTitle = isIncident ? report.title : `${category} Incident Report`;
+  const displayTitle = isIncident
+    ? report.title
+    : `${category} Incident Report`;
 
   // Status Color Mapping
   const statusColors: Record<string, { bg: string; text: string }> = {
-    pending: { bg: "#FF3900", text: "#fff" },       // Alert Orange
+    pending: { bg: "#FF3900", text: "#fff" }, // Alert Orange
     "in-progress": { bg: "#027F8D", text: "#fff" }, // Cordillera Teal
-    resolved: { bg: "#2B8A3E", text: "#fff" },      // Forest Green
+    resolved: { bg: "#2B8A3E", text: "#fff" }, // Forest Green
   };
 
   // ==========================================
@@ -61,6 +70,8 @@ export default function ReportCard({
         day: "numeric",
       })
     : "Recent";
+  const [loading, setLoading] = useState(false);
+  const [isCommunity, setIsCommunity] = useState<boolean>(false);
   const [statusVal, setStatusVal] = useState<string>("");
   useEffect(() => {
     if (isIncident) {
@@ -68,18 +79,28 @@ export default function ReportCard({
       return;
     }
     const fetchStatus = async () => {
+      setLoading(true);
       const { data, error } = await supabase
         .from("incident")
         .select("status")
         .eq("id", report.incident_id)
         .maybeSingle();
 
-      if (error) {
+      const { data: isCommunityData, error: isCommunityError } = await supabase
+        .from("incident")
+        .select("is_community_report")
+        .eq("id", report.incident_id)
+        .maybeSingle();
+
+      if (error && isCommunityError) {
         console.error("Error getting incident status: ", error);
       }
-      if (data) {
+      if (data && isCommunityData) {
+        setIsCommunity(isCommunityData?.is_community_report);
         setStatusVal(data?.status);
       }
+
+      setLoading(false);
     };
 
     fetchStatus();
@@ -195,7 +216,13 @@ export default function ReportCard({
     if (onSelect) {
       return (
         <Box style={footerStyle}>
-          <Button fullWidth variant="light" color="blue" radius="md" onClick={onSelect}>
+          <Button
+            fullWidth
+            variant="light"
+            color="blue"
+            radius="md"
+            onClick={onSelect}
+          >
             Yes, this is the same incident
           </Button>
         </Box>
@@ -205,7 +232,13 @@ export default function ReportCard({
     if (onDelete) {
       return (
         <Group justify="flex-end" style={footerStyle}>
-          <Button size="xs" variant="light" color="red" radius="md" onClick={onDelete}>
+          <Button
+            size="xs"
+            variant="light"
+            color="red"
+            radius="md"
+            onClick={onDelete}
+          >
             Delete Report
           </Button>
         </Group>
@@ -237,7 +270,17 @@ export default function ReportCard({
               onClick={() => handleVoteClick("up")}
               loading={isVoting && currentVote !== "up"}
               leftSection={
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
                   <polyline points="18 15 12 9 6 15" />
                 </svg>
               }
@@ -252,7 +295,17 @@ export default function ReportCard({
               onClick={() => handleVoteClick("down")}
               loading={isVoting && currentVote !== "down"}
               leftSection={
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
               }
@@ -267,7 +320,10 @@ export default function ReportCard({
     return null;
   };
 
-  const currentStatusStyle = statusColors[statusVal] || { bg: "#718096", text: "#fff" };
+  const currentStatusStyle = statusColors[statusVal] || {
+    bg: "#718096",
+    text: "#fff",
+  };
 
   return (
     <Card
@@ -366,7 +422,17 @@ export default function ReportCard({
             zIndex: 2,
           }}
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#fff"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
           </svg>
           <span>ID #{id}</span>
@@ -391,7 +457,17 @@ export default function ReportCard({
             onClick={() => checkIncidentId?.(connectedIncidentId)}
             title={`View Incident #${connectedIncidentId}`}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#027F8D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#027F8D"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
               <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
             </svg>
@@ -405,7 +481,17 @@ export default function ReportCard({
       <Stack p="md" gap="xs">
         {/* Location Row with SVG Pin Icon */}
         <Group gap={6} align="center">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#718096" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#718096"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
             <circle cx="12" cy="10" r="3" />
           </svg>
@@ -427,15 +513,29 @@ export default function ReportCard({
         {/* Reporter & Date Meta Row */}
         <Group justify="space-between" align="center" pt={4}>
           <Group gap={6} align="center">
-            <Avatar size="xs" radius="xl" color="teal">
-              {category ? category.charAt(0).toUpperCase() : "C"}
-            </Avatar>
-            <Text size="11px" fw={600} c="gray.7">
-              Community Report
-            </Text>
+            {isCommunity && (
+              <>
+                <Avatar size="xs" radius="xl" color="teal">
+                  {category ? category.charAt(0).toUpperCase() : "C"}
+                </Avatar>
+                <Text size="11px" fw={600} c="gray.7">
+                  Community Report
+                </Text>
+              </>
+            )}
           </Group>
           <Group gap={4} align="center">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#A0AEC0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#A0AEC0"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
               <line x1="16" y1="2" x2="16" y2="6" />
               <line x1="8" y1="2" x2="8" y2="6" />
