@@ -8,7 +8,7 @@ interface SimilarIncidentsModalProps {
   incidents: Incident[];
   loading: boolean;
   /** User confirmed the report is about one of the listed incidents. */
-  onSelect: (incidentId: string | number) => void;
+  onSelect: (incidentId: number) => void;
   /** User wants a new, separate incident instead. */
   onCreateNew: () => void;
 }
