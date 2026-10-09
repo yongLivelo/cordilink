@@ -13,6 +13,7 @@ import { useEffect, useState, useMemo } from "react";
 import type { Incident, Report } from "@/types/report";
 import ReportCard from "@/components/ReportCard";
 import ReportsToolbar from "@/components/ReportsToolbar";
+import ReportsMapButton from "@/components/ReportsMapButton";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { notifications } from "@mantine/notifications";
@@ -192,6 +193,11 @@ export default function MyReports() {
         sortOrder={sortOrder}
         onSortChange={setSortOrder}
       />
+
+      {/* Map view of all my reports */}
+      <Group justify="flex-end">
+        <ReportsMapButton reports={myReports} />
+      </Group>
 
       {/* Delete Confirmation Modal */}
       <Modal

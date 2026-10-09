@@ -2,6 +2,7 @@ import {
   Stack,
   Loader,
   Center,
+  Group,
   Pagination,
   Text,
 } from "@mantine/core";
@@ -9,6 +10,7 @@ import { useEffect, useState, useMemo } from "react";
 import type { Incident } from "@/types/report";
 import ReportCard from "@/components/ReportCard";
 import ReportsToolbar from "@/components/ReportsToolbar";
+import ReportsMapButton from "@/components/ReportsMapButton";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/context/AuthContext";
 import "leaflet/dist/leaflet.css";
@@ -126,6 +128,11 @@ export default function CommunityReportPage() {
         sortOrder={sortOrder}
         onSortChange={setSortOrder}
       />
+
+      {/* Map view of all community reports */}
+      <Group justify="flex-end">
+        <ReportsMapButton reports={incidents} />
+      </Group>
 
       {/* Reports List */}
       {isLoading ? (
