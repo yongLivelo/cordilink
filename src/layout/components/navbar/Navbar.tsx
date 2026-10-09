@@ -31,7 +31,6 @@ export default function Navbar({
   const location = useLocation();
   const [loading, setLoading] = useState<boolean>(false);
   const [logoutModalOpened, { open: openLogout, close: closeLogout }] = useDisclosure(false);
-  const [emergencyModalOpened, { open: openEmergency, close: closeEmergency }] = useDisclosure(false);
   const { session, role } = useAuth();
 
   const handleLogout = async () => {
@@ -122,50 +121,6 @@ export default function Navbar({
         </Group>
       </Modal>
 
-      {/* 2. EMERGENCY 911 CONFIRMATION MODAL */}
-      <Modal
-        opened={emergencyModalOpened}
-        onClose={closeEmergency}
-        title={
-          <Group gap="xs">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D32F2F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-              <line x1="12" y1="9" x2="12" y2="13" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
-            <Text fw={800} c="#D32F2F">Emergency Services Confirmation</Text>
-          </Group>
-        }
-        centered
-        radius="md"
-      >
-        <Text size="sm" mb="md" lh={1.5}>
-          You are about to dial <strong>911 Emergency Services</strong> for Baguio City.
-        </Text>
-        <Text size="xs" c="dimmed" mb="lg">
-          Please confirm that this is an urgent life-threatening emergency (medical, fire, or crime). CordiLink reports are strictly for non-emergency civic hazards.
-        </Text>
-        <Group justify="flex-end">
-          <Button variant="default" onClick={closeEmergency} radius="md">
-            Cancel
-          </Button>
-          <Button
-            component="a"
-            href="tel:911"
-            color="red"
-            radius="md"
-            onClick={closeEmergency}
-            leftSection={
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-              </svg>
-            }
-          >
-            Confirm & Call 911
-          </Button>
-        </Group>
-      </Modal>
-
       <Box
         style={{
           display: "flex",
@@ -245,43 +200,6 @@ export default function Navbar({
               );
             })}
           </Stack>
-
-          {/* Quick Emergency 911 Call Card with Confirmation */}
-          <Box
-            p="md"
-            style={{
-              backgroundColor: "#FFF4F3",
-              border: "1px solid #FFD8D4",
-              borderRadius: "12px",
-            }}
-          >
-            <Group justify="space-between" align="center" mb={6}>
-              <Text size="xs" fw={800} c={BRAND.orange} tt="uppercase">
-                Emergency Hotline
-              </Text>
-              <Badge size="xs" color="red" variant="filled">
-                911
-              </Badge>
-            </Group>
-            <Text size="xs" c="dimmed" mb="xs">
-              Immediate medical, fire, or police support.
-            </Text>
-            <Button
-              onClick={openEmergency}
-              fullWidth
-              size="xs"
-              color={BRAND.orange}
-              radius="md"
-              fw={700}
-              leftSection={
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                </svg>
-              }
-            >
-              Call 911
-            </Button>
-          </Box>
         </Stack>
 
         {/* BOTTOM SECTION: USER PROFILE & SESSION */}

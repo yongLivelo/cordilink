@@ -10,11 +10,13 @@ import {
   Title,
   Box,
   Card,
-  Container,
   SimpleGrid,
   Badge,
   UnstyledButton,
+  Button,
+  Modal,
 } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import { useEffect, useState, useMemo } from "react";
 import type { Incident } from "@/types/report";
 import ReportCard from "@/components/ReportCard";
@@ -178,10 +180,35 @@ export default function Dashboard() {
     }
   };
 
+  const [logoutModalOpened, { open: openLogout, close: closeLogout }] = useDisclosure(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleAdminLogout = async () => {
+    setIsLoggingOut(true);
+    await supabase.auth.signOut();
+    setIsLoggingOut(false);
+    closeLogout();
+  };
+
   return (
     <Box style={{ width: "100%", margin: 0, padding: 0 }}>
+      {/* LOGOUT CONFIRMATION MODAL */}
+      <Modal opened={logoutModalOpened} onClose={closeLogout} title="Confirm Logout" centered radius="md">
+        <Text size="sm" mb="lg">
+          Are you sure you want to sign out of the Admin Incident Dispatch Portal?
+        </Text>
+        <Group justify="flex-end">
+          <Button variant="default" onClick={closeLogout} radius="md">
+            Cancel
+          </Button>
+          <Button color="red" onClick={handleAdminLogout} loading={isLoggingOut} radius="md">
+            Yes, Log Out
+          </Button>
+        </Group>
+      </Modal>
+
       {/* =========================================================================
-          1. HEADER FOR ADMIN (Executive LGU Command Banner)
+          1. HEADER FOR ADMIN (Executive LGU Command Banner - Full Span, Borderless)
           ========================================================================= */}
       <Box
         style={{
@@ -191,100 +218,113 @@ export default function Dashboard() {
           color: "#ffffff",
           boxShadow: "0 6px 20px rgba(0, 36, 54, 0.2)",
         }}
-        px={{ base: "md", md: "xl" }}
+        px={{ base: "md", md: "xl", lg: 36 }}
         py={{ base: "xl", md: 36 }}
       >
-        <Container size="xl" p={0}>
-          <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
-            <Box maw={700}>
-              <Group gap="xs" mb={8}>
-                <Badge
-                  size="sm"
-                  variant="filled"
-                  style={{
-                    backgroundColor: BRAND.orange,
-                    color: "#ffffff",
-                    letterSpacing: "0.5px",
-                    fontWeight: 800,
-                  }}
-                >
-                  LGU DISPATCH
-                </Badge>
-                <Text size="xs" fw={700} c="rgba(255, 255, 255, 0.8)">
-                  BAGUIO CITY MUNICIPAL OPERATIONS
-                </Text>
-              </Group>
-
-              <Title
-                order={1}
-                size="h1"
-                fw={900}
-                c="#ffffff"
-                lh={1.15}
-                style={{ letterSpacing: "-0.5px" }}
-              >
-                Central Incident Dispatch Portal
-              </Title>
-              <Text size="sm" c="rgba(255, 255, 255, 0.85)" mt={6} lh={1.5}>
-                Manage municipal field reports, update department triage status (CEPMO, CDRRMO,
-                City Engineering), and monitor community upvotes in real-time.
-              </Text>
-            </Box>
-
-            {/* Admin Badge & Current Date */}
-            <Box
-              style={{
-                backgroundColor: "rgba(255, 255, 255, 0.12)",
-                padding: "10px 18px",
-                borderRadius: "12px",
-                backdropFilter: "blur(6px)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-              }}
-            >
-              <Text size="11px" fw={700} c="rgba(255,255,255,0.7)" tt="uppercase">
-                Logged in as
-              </Text>
-              <Text size="sm" fw={800} c="#ffffff">
-                LGU Operations Admin
-              </Text>
-              <Box
-                mt={8}
+        <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
+          <Box maw={740}>
+            <Group gap="xs" mb={8}>
+              <Badge
+                size="sm"
+                variant="filled"
                 style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  backgroundColor: "rgba(16, 185, 129, 0.18)",
-                  border: "1px solid rgba(52, 211, 153, 0.4)",
-                  padding: "4px 10px",
-                  borderRadius: "999px",
+                  backgroundColor: BRAND.orange,
+                  color: "#ffffff",
+                  letterSpacing: "0.5px",
+                  fontWeight: 800,
                 }}
               >
-                <span
-                  style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: "50%",
-                    backgroundColor: "#34D399",
-                    boxShadow: "0 0 6px #34D399",
-                    display: "inline-block",
-                  }}
-                />
-                <Text size="11px" fw={700} c="#A7F3D0" style={{ letterSpacing: "0.4px" }}>
-                  Live Database Sync
+                LGU DISPATCH
+              </Badge>
+              <Text size="xs" fw={700} c="rgba(255, 255, 255, 0.8)">
+                BAGUIO CITY MUNICIPAL OPERATIONS
+              </Text>
+            </Group>
+
+            <Title
+              order={1}
+              size="h1"
+              fw={900}
+              c="#ffffff"
+              lh={1.15}
+              style={{ letterSpacing: "-0.5px" }}
+            >
+              Central Incident Dispatch Portal
+            </Title>
+            <Text size="sm" c="rgba(255, 255, 255, 0.88)" mt={6} lh={1.5}>
+              Manage municipal field reports, update department triage status (CEPMO, CDRRMO,
+              City Engineering), and monitor community upvotes in real-time.
+            </Text>
+          </Box>
+
+          {/* Admin Info & High-Contrast Live Sync Chip */}
+          <Box
+            style={{
+              backgroundColor: "rgba(255, 255, 255, 0.12)",
+              padding: "12px 18px",
+              borderRadius: "14px",
+              backdropFilter: "blur(6px)",
+            }}
+          >
+            <Group justify="space-between" align="center" gap="md" mb={4}>
+              <Box>
+                <Text size="11px" fw={700} c="rgba(255,255,255,0.75)" tt="uppercase">
+                  Logged in as
+                </Text>
+                <Text size="sm" fw={800} c="#ffffff">
+                  LGU Operations Admin
                 </Text>
               </Box>
+              <Button
+                size="xs"
+                variant="white"
+                color="red"
+                radius="md"
+                fw={700}
+                onClick={openLogout}
+              >
+                Log Out
+              </Button>
+            </Group>
+
+            {/* High-Contrast "● Live Database Sync" Chip */}
+            <Box
+              mt={8}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                backgroundColor: "#ffffff",
+                padding: "5px 14px",
+                borderRadius: "999px",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.18)",
+              }}
+            >
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  backgroundColor: "#10B981",
+                  boxShadow: "0 0 6px #10B981",
+                  display: "inline-block",
+                }}
+              />
+              <Text size="xs" fw={800} c={BRAND.navy} style={{ letterSpacing: "0.4px" }}>
+                Live Database Sync
+              </Text>
             </Box>
-          </Group>
-        </Container>
+          </Box>
+        </Group>
       </Box>
 
       {/* =========================================================================
-          2. SPACE UTILIZATION: EXECUTIVE KPI METRIC CARDS
+          2. SPACE UTILIZATION: EXECUTIVE KPI METRIC CARDS (Full Span, Borderless)
           ========================================================================= */}
-      <Container size="xl" px={{ base: "md", md: "xl" }} pt={{ base: "md", md: "xl" }}>
+      <Box px={{ base: "md", md: "xl", lg: 36 }} pt={{ base: "md", md: "xl" }} pb="xl" style={{ width: "100%" }}>
         <SimpleGrid cols={{ base: 2, md: 4 }} spacing="md">
           {/* Metric 1: Total Incidents */}
-          <Card shadow="xs" radius="lg" withBorder p="md" style={{ backgroundColor: "#ffffff" }}>
+          <Card shadow="sm" radius="lg" p="md" style={{ backgroundColor: "#ffffff", boxShadow: "0 2px 10px rgba(0, 57, 83, 0.05)" }}>
             <Text size="xs" fw={700} c="gray.6" tt="uppercase">
               Total Incidents Logged
             </Text>
@@ -298,11 +338,10 @@ export default function Dashboard() {
 
           {/* Metric 2: Pending Triage */}
           <Card
-            shadow="xs"
+            shadow="sm"
             radius="lg"
-            withBorder
             p="md"
-            style={{ backgroundColor: "#FFF8F5", borderColor: "#FFD8D0" }}
+            style={{ backgroundColor: "#FFF8F5", boxShadow: "0 2px 10px rgba(255, 57, 0, 0.06)" }}
           >
             <Group justify="space-between" align="center">
               <Text size="xs" fw={700} c={BRAND.orange} tt="uppercase">
@@ -322,11 +361,10 @@ export default function Dashboard() {
 
           {/* Metric 3: In Progress */}
           <Card
-            shadow="xs"
+            shadow="sm"
             radius="lg"
-            withBorder
             p="md"
-            style={{ backgroundColor: "#F4FAFA", borderColor: "#CBE4E7" }}
+            style={{ backgroundColor: "#F2F9F9", boxShadow: "0 2px 10px rgba(2, 127, 141, 0.06)" }}
           >
             <Group justify="space-between" align="center">
               <Text size="xs" fw={700} c={BRAND.teal} tt="uppercase">
@@ -346,11 +384,10 @@ export default function Dashboard() {
 
           {/* Metric 4: Resolved */}
           <Card
-            shadow="xs"
+            shadow="sm"
             radius="lg"
-            withBorder
             p="md"
-            style={{ backgroundColor: "#F6FBF7", borderColor: "#CFE8D4" }}
+            style={{ backgroundColor: "#F2F9F4", boxShadow: "0 2px 10px rgba(43, 138, 62, 0.06)" }}
           >
             <Group justify="space-between" align="center">
               <Text size="xs" fw={700} c="green.8" tt="uppercase">
@@ -370,9 +407,9 @@ export default function Dashboard() {
         </SimpleGrid>
 
         {/* =========================================================================
-            3. INTERACTIVE CONTROL BAR (SEARCH, CATEGORY, STATUS TABS, SORT)
+            3. INTERACTIVE CONTROL BAR (SEARCH, CATEGORY, STATUS TABS, SORT - Borderless)
             ========================================================================= */}
-        <Card shadow="xs" radius="lg" withBorder p="md" mt="xl" style={{ backgroundColor: "#ffffff" }}>
+        <Card shadow="sm" radius="lg" p="md" mt="xl" style={{ backgroundColor: "#ffffff", boxShadow: "0 2px 10px rgba(0, 57, 83, 0.05)" }}>
           <Stack gap="md">
             <Group justify="space-between" align="flex-end" wrap="wrap" gap="md">
               {/* Search Bar */}
@@ -416,7 +453,7 @@ export default function Dashboard() {
             </Group>
 
             {/* Status Filter Tabs */}
-            <Group gap={6} pt={6} style={{ borderTop: "1px solid #EDF2F4" }}>
+            <Group gap={6} pt={8}>
               <Text size="xs" fw={700} c="gray.6" mr={4}>
                 Status:
               </Text>
@@ -499,7 +536,7 @@ export default function Dashboard() {
             </Center>
           )}
         </Box>
-      </Container>
+      </Box>
     </Box>
   );
 }

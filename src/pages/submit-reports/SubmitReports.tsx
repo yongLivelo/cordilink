@@ -156,10 +156,14 @@ export default function SubmitReports() {
               type="submit"
               size="md"
               radius="md"
-              color={BRAND.orange}
               loading={submission.loading}
               mt="sm"
               fw={800}
+              style={{
+                backgroundColor: BRAND.orange,
+                color: "#ffffff",
+                boxShadow: "0 4px 14px rgba(255, 57, 0, 0.35)",
+              }}
               leftSection={
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <line x1="22" y1="2" x2="11" y2="13" />

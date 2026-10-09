@@ -17,7 +17,7 @@ import {
   UnstyledButton,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { Link } from "react-router";
+import { Link, Navigate } from "react-router";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import type { Report } from "@/types/report";
@@ -32,7 +32,12 @@ const BRAND = {
 };
 
 export default function Home() {
-  const { session } = useAuth();
+  const { session, role } = useAuth();
+
+  // For Admin accounts: only the Dashboard is visible on screen!
+  if (role === "admin") {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const [reports, setReports] = useState<Report[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -324,53 +329,55 @@ export default function Home() {
       </Box>
 
       {/* =========================================================================
-          2. QUICK ACTIONS SECTION (PLACED BELOW THE HEADER - USER REQUESTED)
+          2. QUICK ACTIONS SECTION (PRIMARY EMPHASIS: SUBMIT A REPORT)
           ========================================================================= */}
       <Container size="xl" px={{ base: "md", md: "xl" }} pt={{ base: "md", md: "xl" }}>
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-          {/* ACTION CARD 1: SUBMIT A CIVIC REPORT */}
+        <Stack gap="md">
+          {/* PRIMARY HERO ACTION CARD: SUBMIT A CIVIC REPORT (HIGH VISUAL HIERARCHY) */}
           <Card
             withBorder
-            shadow="sm"
+            shadow="md"
             radius="lg"
-            p="lg"
+            p={{ base: "md", sm: "xl" }}
             component={Link}
             to="/submit-reports"
             style={{
               backgroundColor: "#ffffff",
               textDecoration: "none",
               cursor: "pointer",
-              transition: "all 0.2s ease",
-              borderLeft: `5px solid ${BRAND.orange}`,
+              transition: "all 0.25s ease",
+              borderLeft: `6px solid ${BRAND.orange}`,
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-3px)";
-              e.currentTarget.style.boxShadow = "0 8px 24px rgba(0, 57, 83, 0.1)";
+              e.currentTarget.style.transform = "translateY(-4px)";
+              e.currentTarget.style.boxShadow = "0 12px 30px rgba(255, 57, 0, 0.16)";
+              e.currentTarget.style.borderColor = BRAND.orange;
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = "translateY(0)";
               e.currentTarget.style.boxShadow = "";
+              e.currentTarget.style.borderColor = "";
             }}
           >
-            <Group justify="space-between" align="center" wrap="nowrap">
-              <Group gap="md" wrap="nowrap">
-                {/* SVG Icon */}
+            <Group justify="space-between" align="center" wrap="wrap" gap="lg">
+              <Group gap="lg" align="center" wrap="nowrap" style={{ flex: 1, minWidth: 280 }}>
+                {/* Elevated Action Icon */}
                 <Box
                   style={{
-                    width: 52,
-                    height: 52,
-                    borderRadius: 14,
+                    width: 60,
+                    height: 60,
+                    borderRadius: 16,
                     backgroundColor: BRAND.orange,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    boxShadow: "0 4px 12px rgba(255, 57, 0, 0.35)",
+                    boxShadow: "0 6px 18px rgba(255, 57, 0, 0.35)",
                     flexShrink: 0,
                   }}
                 >
                   <svg
-                    width="26"
-                    height="26"
+                    width="30"
+                    height="30"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="#fff"
@@ -384,84 +391,88 @@ export default function Home() {
                     <line x1="8" y1="12" x2="16" y2="12" />
                   </svg>
                 </Box>
-                <Box>
-                  <Text fw={900} size="md" c={BRAND.orange} tt="uppercase" lh={1.2}>
-                    SUBMIT A REPORT
-                  </Text>
-                  <Text size="xs" c="dimmed" mt={2} lh={1.4}>
-                    Fast Lane (manual category) or AI Lane (Taglish assistant) with GPS tagging.
+
+                {/* Content with Badges and Clear Text */}
+                <Box style={{ flex: 1 }}>
+                  <Group gap="xs" mb={6}>
+                    <Badge color="orange" variant="filled" size="sm" fw={800}>
+                      PRIMARY CITIZEN ACTION
+                    </Badge>
+                    <Badge color="teal" variant="light" size="sm" fw={700}>
+                      FAST LANE & AI LANE
+                    </Badge>
+                  </Group>
+
+                  <Title order={2} size="h3" fw={900} c={BRAND.navy} lh={1.2}>
+                    SUBMIT A CIVIC REPORT
+                  </Title>
+                  <Text size="xs" c="dimmed" mt={4} lh={1.5} maw={700}>
+                    Report potholes, landslides, fallen debris, or public safety hazards. Includes instant GPS location tagging, photo evidence capture, and automated 20-meter incident deduplication.
                   </Text>
                 </Box>
               </Group>
-              <Button size="xs" color={BRAND.orange} radius="md" fw={700}>
-                Report Now →
+
+              {/* Bold CTA Button */}
+              <Button
+                size="md"
+                color={BRAND.orange}
+                radius="md"
+                fw={800}
+                style={{
+                  boxShadow: "0 4px 14px rgba(255, 57, 0, 0.35)",
+                }}
+                rightSection={
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                }
+              >
+                File Report Now
               </Button>
             </Group>
           </Card>
 
-          {/* ACTION CARD 2: EMERGENCY 911 WITH CONFIRMATION */}
-          <Card
-            withBorder
-            shadow="sm"
-            radius="lg"
-            p="lg"
+          {/* DE-EMPHASIZED AUXILIARY SAFETY STRIP: CALL 911 */}
+          <Box
+            p="xs"
+            px="md"
             style={{
-              backgroundColor: "#FFF7F6",
-              borderColor: "#FFD8D4",
-              borderLeft: "5px solid #D32F2F",
+              backgroundColor: "#FAFBFB",
+              borderRadius: "10px",
+              border: "1px solid #ECECEC",
             }}
           >
-            <Group justify="space-between" align="center" wrap="nowrap">
-              <Group gap="md" wrap="nowrap">
-                {/* Phone SVG Icon */}
-                <Box
-                  style={{
-                    width: 52,
-                    height: 52,
-                    borderRadius: 14,
-                    backgroundColor: "#D32F2F",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                    boxShadow: "0 4px 12px rgba(211, 47, 47, 0.3)",
-                  }}
-                >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#fff"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                  </svg>
-                </Box>
-                <Box>
-                  <Text fw={900} size="md" c="#D32F2F" lh={1.2}>
-                    EMERGENCY? CALL 911
-                  </Text>
-                  <Text size="xs" c="dimmed" mt={2} lh={1.4}>
-                    Strictly for life-threatening emergencies. Click to open verified dialer.
-                  </Text>
-                </Box>
+            <Group justify="space-between" align="center" wrap="wrap" gap="xs">
+              <Group gap="xs" align="center" wrap="nowrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D32F2F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <Text size="xs" c="gray.7">
+                  <strong style={{ color: "#D32F2F" }}>Emergency Hotline:</strong> For critical life-threatening situations (medical, fire, or police dispatch), call 911 directly. CordiLink is strictly for municipal non-emergencies.
+                </Text>
               </Group>
+
               <Button
                 onClick={openEmergency}
                 color="red"
-                radius="md"
+                variant="subtle"
                 size="xs"
-                fw={800}
+                radius="sm"
+                fw={700}
+                leftSection={
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                  </svg>
+                }
               >
                 Call 911
               </Button>
             </Group>
-          </Card>
-        </SimpleGrid>
+          </Box>
+        </Stack>
       </Container>
 
       {/* =========================================================================

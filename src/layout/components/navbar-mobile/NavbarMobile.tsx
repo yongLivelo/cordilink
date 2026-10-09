@@ -4,8 +4,13 @@ import { Link, useLocation } from "react-router";
 
 export default function BottomNav() {
   const location = useLocation();
-  useAuth();
+  const { role } = useAuth();
   const BRAND_ORANGE = "#FF3900";
+
+  // For Admin accounts: only the Dashboard is displayed on screen — no citizen tabs
+  if (role === "admin") {
+    return null;
+  }
 
   return (
     <Paper
