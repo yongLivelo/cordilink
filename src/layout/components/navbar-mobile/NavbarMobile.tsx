@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router";
 
 export default function BottomNav() {
     const location = useLocation();
-    const { role } = useAuth();
+    useAuth();
     const BRAND_ORANGE = "#FF3B00"; // CORDILINK Brand Color[span_5](start_span)[span_5](end_span)
 
     // Map route paths to display names & icons[span_6](start_span)[span_6](end_span)
