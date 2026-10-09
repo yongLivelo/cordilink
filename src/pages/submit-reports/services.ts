@@ -31,10 +31,17 @@ export async function uploadImage(base64Image: string) {
 }
 
 /** Classifies the report via the `ai-categorizer` Edge Function. */
+// 1. Define the exact shape of the returned data
+export interface AiCategorizeResult {
+  category: string;
+  embedding: number[];
+}
+
+// 2. Change Promise<Object> to Promise<AiCategorizeResult>
 export async function aiCategorize(
   image: string,
   description: string,
-): Promise<string> {
+): Promise<AiCategorizeResult> {
   const { data, error } = await supabase.functions.invoke("ai-categorizer", {
     body: {
       image,
@@ -43,8 +50,11 @@ export async function aiCategorize(
   });
 
   if (error) throw new Error(`AI categorization failed: ${error.message}`);
-  console.log(data);
-  return data?.category ?? "other";
+
+  return {
+    category: data?.category,
+    embedding: data?.embedding,
+  };
 }
 
 /** Finds active incidents near the report matching the given category. */
@@ -53,16 +63,24 @@ export async function findNearbyIncidents(
   lat: number,
   lng: number,
   category: string,
+  embedding: number[], // Properly typed vector array
+  matchThreshold: number = 0.5, // Optional cosine similarity threshold (0.0 to 1.0)
 ): Promise<Incident[]> {
   const { data, error } = await supabase.rpc("get_nearby_incidents", {
     query_lat: lat,
     query_lng: lng,
     query_category: category,
+    query_embedding: embedding, // Passed to PostgreSQL pgvector
     radius_meters: 100,
+    match_threshold: matchThreshold,
     exclude_user_id: userId,
   });
 
-  if (error) console.error("Error finding nearby incidents reports: ", error);
+  if (error) {
+    console.error("Error finding nearby incident reports: ", error);
+    return [];
+  }
+
   return data ?? [];
 }
 
@@ -70,7 +88,8 @@ export async function findNearbyIncidents(
 export async function createNewIncident(
   draft: ReportDraft,
 ): Promise<string | number> {
-  const { lat, lng, category, locationName, description, imageUrl } = draft;
+  const { lat, lng, category, locationName, description, imageUrl, embedding } =
+    draft;
   const pointLocation = `POINT(${lng} ${lat})`;
 
   const { data, error } = await supabase
@@ -81,6 +100,7 @@ export async function createNewIncident(
       location_name: locationName,
       description,
       image_url: imageUrl,
+      embedding,
     })
     .select("id")
     .single();

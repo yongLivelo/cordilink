@@ -10,6 +10,7 @@ export type ReportDraft = {
   imageUrl: string;
   description: string;
   locationPoint: string;
+  embedding: number[];
 };
 
 /** The row inserted into the `report` table once the incident is known. */

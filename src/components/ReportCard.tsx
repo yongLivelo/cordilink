@@ -35,14 +35,7 @@ export default function ReportCard({
   // 1. Derived Variables
   // ==========================================
   const isIncident = "title" in report;
-  const {
-    id,
-    image_url: image,
-    description,
-    category,
-    location_name,
-    status,
-  } = report;
+  const { id, image_url: image, description, category, location_name } = report;
 
   const connectedIncidentId = !isIncident
     ? (report as Report).incident_id
@@ -57,8 +50,34 @@ export default function ReportCard({
   // ==========================================
   // 2. State
   // ==========================================
+  //
+  //
+
+  const [statusVal, setStatusVal] = useState<string>("");
+  useEffect(() => {
+    if (isIncident) {
+      setStatusVal(report.status);
+      return;
+    }
+    const fetchStatus = async () => {
+      const { data, error } = await supabase
+        .from("incident")
+        .select("status")
+        .eq("id", report.incident_id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error getting incident status: ", error);
+      }
+      if (data) {
+        setStatusVal(data?.status);
+      }
+    };
+
+    fetchStatus();
+  }, []);
+
   const [score, setScore] = useState<number>(0);
-  const [statusVal, setStatusVal] = useState<string>(status);
   const [currentVote, setCurrentVote] = useState<"up" | "down" | "none">(
     "none",
   );

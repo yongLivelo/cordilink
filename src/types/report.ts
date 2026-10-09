@@ -9,7 +9,6 @@ export type Report = {
   incident_id: number;
   created_at: string;
   category: string;
-  status: ReportStatus;
   location_name: string;
 };
 

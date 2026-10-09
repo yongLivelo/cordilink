@@ -7,16 +7,21 @@ import {
   Group,
   Pagination,
   Text,
+  Button,
+  Modal,
 } from "@mantine/core";
 import { useEffect, useState, useMemo } from "react";
 import type { Incident } from "@/types/report";
 import ReportCard from "@/components/ReportCard";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/context/AuthContext";
-
+import { useDisclosure } from "@mantine/hooks";
+import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 const ITEMS_PER_PAGE = 2;
 
 export default function CommunityReportPage() {
+  const [opened, { open, close }] = useDisclosure(false);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { session } = useAuth();
@@ -111,6 +116,29 @@ export default function CommunityReportPage() {
 
   return (
     <Stack>
+      <Button onClick={open}>Open Map</Button>
+
+      <Modal
+        opened={opened}
+        onClose={close}
+        title="Community Incident Map"
+        size="lg"
+        centered
+      >
+        <div style={{ height: 420, width: "100%" }}>
+          <MapContainer
+            center={[51.505, -0.09]}
+            zoom={11}
+            scrollWheelZoom={false}
+            style={{ height: "100%" }}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+          </MapContainer>
+        </div>
+      </Modal>
       {/* Controls Section */}
       <Group align="flex-end">
         <TextInput

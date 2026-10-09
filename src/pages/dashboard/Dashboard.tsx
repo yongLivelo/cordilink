@@ -129,7 +129,6 @@ export default function Dashboard() {
   };
 
   const handleChangeStatus = async (reportId: number, newStatus: string) => {
-    console.log(newStatus);
     const { error } = await supabase
       .from("incident")
       .update({ status: newStatus })

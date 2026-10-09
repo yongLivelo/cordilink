@@ -20,6 +20,7 @@ const CATEGORIES = [
 
 // Official, active Google model name
 const DEFAULT_MODEL = "gemini-3.1-flash-lite";
+const EMBEDDING_MODEL = "gemini-embedding-001";
 
 type Category = (typeof CATEGORIES)[number];
 
@@ -145,11 +146,19 @@ Respond strictly in JSON format matching the schema.`;
       );
     }
 
+    const embedModel = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
+
+    const textToEmbed = `Category: ${parsed.category}. Description: ${text ? text.trim() : "No user description"}. AI Visual Analysis: ${parsed.reasoning}`;
+    const embedResult = await embedModel.embedContent(textToEmbed);
+
+    const embedding = embedResult.embedding.values;
+
     return Response.json(
       {
         category: parsed.category,
         confidence: parsed.confidence,
         reasoning: parsed.reasoning,
+        embedding: embedding,
       },
       { headers: corsHeaders },
     );
