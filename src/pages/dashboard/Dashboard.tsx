@@ -2,8 +2,6 @@ import {
   Stack,
   Loader,
   Center,
-  TextInput,
-  Select,
   Group,
   Pagination,
   Text,
@@ -12,7 +10,6 @@ import {
   Card,
   SimpleGrid,
   Badge,
-  UnstyledButton,
   Button,
   Modal,
 } from "@mantine/core";
@@ -20,6 +17,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { useEffect, useState, useMemo } from "react";
 import type { Incident } from "@/types/report";
 import ReportCard from "@/components/ReportCard";
+import ReportsToolbar from "@/components/ReportsToolbar";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/context/AuthContext";
 
@@ -471,68 +469,16 @@ export default function Dashboard() {
           }}
         >
           <Stack gap="md">
-            <Group
-              justify="space-between"
-              align="flex-end"
-              wrap="wrap"
-              gap="md"
-            >
-              {/* Search Bar */}
-              <TextInput
-                placeholder="Search by title, description, barangay..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.currentTarget.value)}
-                style={{ flex: 1, minWidth: 260 }}
-                radius="md"
-                leftSection={
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#718096"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <circle cx="11" cy="11" r="8" />
-                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                  </svg>
-                }
-              />
-
-              {/* Category Dropdown */}
-              <Select
-                placeholder="All Categories"
-                data={categories}
-                value={selectedCategory}
-                onChange={setSelectedCategory}
-                clearable
-                w={{ base: "100%", sm: 200 }}
-                radius="md"
-              />
-
-              {/* Sort Order Dropdown */}
-              <Select
-                data={[
-                  { value: "latest", label: "Sort: Latest First" },
-                  { value: "oldest", label: "Sort: Oldest First" },
-                ]}
-                value={sortOrder}
-                onChange={setSortOrder}
-                w={{ base: "100%", sm: 180 }}
-                allowDeselect={false}
-                radius="md"
-              />
-            </Group>
-
-            {/* Status Filter Tabs */}
-            <Group gap={6} pt={8}>
-              <Text size="xs" fw={700} c="gray.6" mr={4}>
-                Status:
-              </Text>
-              {[
+            <ReportsToolbar
+              searchPlaceholder="Search by title, description, barangay..."
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              selectedStatus={selectedStatusTab}
+              onStatusChange={setSelectedStatusTab}
+              statusOptions={[
                 { label: `All (${metrics.total})`, value: "all" },
                 { label: `Pending (${metrics.pending})`, value: "pending" },
                 {
@@ -540,28 +486,10 @@ export default function Dashboard() {
                   value: "in-progress",
                 },
                 { label: `Resolved (${metrics.resolved})`, value: "resolved" },
-              ].map((tab) => {
-                const isActive = selectedStatusTab === tab.value;
-                return (
-                  <UnstyledButton
-                    key={tab.value}
-                    onClick={() => setSelectedStatusTab(tab.value)}
-                    style={{
-                      padding: "6px 14px",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      backgroundColor: isActive ? BRAND.teal : "#EDF2F4",
-                      color: isActive ? "#ffffff" : "#4A5568",
-                      transition: "all 0.15s ease",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {tab.label}
-                  </UnstyledButton>
-                );
-              })}
-            </Group>
+              ]}
+              sortOrder={sortOrder}
+              onSortChange={setSortOrder}
+            />
           </Stack>
         </Card>
 
