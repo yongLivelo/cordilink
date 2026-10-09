@@ -1,5 +1,6 @@
 import { Box, Button, Group, Image, Stack, Text } from "@mantine/core";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { ChangeEvent } from "react";
 import Webcam from "react-webcam";
 
 interface CameraProps {
@@ -9,6 +10,7 @@ interface CameraProps {
 }
 export default function Camera({ onCapture, onRetake, resetKey }: CameraProps) {
   const webcamRef = useRef<Webcam>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [imageSrc, setImageSrc] = useState<null | string>(null);
   const [cameraError, setCameraError] = useState<null | string>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
@@ -20,6 +22,60 @@ export default function Camera({ onCapture, onRetake, resetKey }: CameraProps) {
   const toggleCamera = () => {
     setFacingMode((prevMode) => (prevMode === "user" ? "environment" : "user"));
   };
+
+  // Upload from gallery: read the file as base64 and treat it exactly like a capture
+  const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow picking the same file again
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      setImageSrc(dataUrl);
+      onCapture(dataUrl);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const uploadButton = (
+    <Button
+      onClick={() => fileInputRef.current?.click()}
+      color="#003953"
+      variant="light"
+      radius="md"
+      fw={700}
+      leftSection={
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="17 8 12 3 7 8" />
+          <line x1="12" y1="3" x2="12" y2="15" />
+        </svg>
+      }
+    >
+      Upload File
+    </Button>
+  );
+
+  const hiddenFileInput = (
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept="image/*"
+      onChange={handleFileSelect}
+      style={{ display: "none" }}
+    />
+  );
 
   const capture = useCallback(() => {
     const image = webcamRef.current?.getScreenshot();
@@ -79,7 +135,13 @@ export default function Camera({ onCapture, onRetake, resetKey }: CameraProps) {
         </Box>
       )}
 
-      {!cameraError && (
+      {hiddenFileInput}
+
+      {cameraError ? (
+        <Group justify="center" gap="sm">
+          {uploadButton}
+        </Group>
+      ) : (
         <>
           {!imageSrc ? (
             <Group justify="center" gap="sm">
@@ -89,7 +151,17 @@ export default function Camera({ onCapture, onRetake, resetKey }: CameraProps) {
                 radius="md"
                 fw={700}
                 leftSection={
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#fff"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                     <circle cx="12" cy="13" r="4" />
                   </svg>
@@ -104,7 +176,17 @@ export default function Camera({ onCapture, onRetake, resetKey }: CameraProps) {
                 radius="md"
                 fw={700}
                 leftSection={
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
                     <polyline points="23 4 23 10 17 10" />
                     <polyline points="1 20 1 14 7 14" />
                     <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
@@ -113,6 +195,7 @@ export default function Camera({ onCapture, onRetake, resetKey }: CameraProps) {
               >
                 Flip Camera
               </Button>
+              {uploadButton}
             </Group>
           ) : (
             <Button
@@ -125,7 +208,17 @@ export default function Camera({ onCapture, onRetake, resetKey }: CameraProps) {
               radius="md"
               fw={700}
               leftSection={
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
                   <polyline points="1 4 1 10 7 10" />
                   <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
                 </svg>
