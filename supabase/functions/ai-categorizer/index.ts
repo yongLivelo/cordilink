@@ -10,15 +10,17 @@ const corsHeaders = {
 };
 
 const CATEGORIES = [
-  "road_hazard",
-  "streetlight",
-  "graffiti",
-  "sanitation",
-  "water",
-  "other",
+  "Commuter Transport Shortages",
+  "Potholes and Rapid Asphalt Degradation",
+  "Clogged Storm Drain Inlets and Street Flash Flooding",
+  "Delayed Garbage Collection at Barangay Drop-off Points",
+  "Landslides Soil Erosion, and Rockfalls on Steep Slopes",
+  "Tangled Low-Hanging, and Abandoned Spaghetti Wires",
+  "Rotational Water Supply Schedules and Extended Dry Spells",
+  "Illegal Street Parking on Narrow Residential Street",
 ] as const;
 
-// Official, active Google model name
+// Official"", active Google model name
 const DEFAULT_MODEL = "gemini-3.1-flash-lite";
 const EMBEDDING_MODEL = "gemini-embedding-001";
 

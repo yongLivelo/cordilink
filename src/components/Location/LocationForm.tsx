@@ -115,12 +115,12 @@ export default function LocationForm({
             </Alert>
           ) : (
             <Popover
+              zIndex={100}
               opened={open}
               onChange={setOpen}
               width="target"
               position="bottom-start"
               shadow="md"
-              withinPortal={false}
             >
               <Popover.Target>
                 <TextInput
@@ -158,8 +158,7 @@ export default function LocationForm({
                   autoComplete="off"
                 />
               </Popover.Target>
-
-              <Popover.Dropdown p={0}>
+              <Popover.Dropdown>
                 <LocationCard
                   suggestions={search.suggestions}
                   loading={search.loading}

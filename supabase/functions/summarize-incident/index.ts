@@ -52,11 +52,14 @@ Deno.serve(async (req) => {
       throw incidentError;
     }
 
-    // 4. Fetch all active reports connected to this incident
+    // 4. Fetch the 5 most recent active reports connected to this incident
+    // (caps what gets sent to Gemini so the summary prompt stays small)
     const { data: reports, error: fetchError } = await supabase
       .from("report")
       .select("description, image_url")
-      .eq("incident_id", incidentId);
+      .eq("incident_id", incidentId)
+      .order("created_at", { ascending: false })
+      .limit(5);
 
     if (fetchError) throw fetchError;
 

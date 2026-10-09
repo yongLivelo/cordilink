@@ -82,6 +82,7 @@ export default function SubmitReports() {
   return (
     <Container
       size="sm"
+      h="100%"
       py={{ base: "md", sm: "xl" }}
       px={{ base: "xs", sm: "md" }}
     >
