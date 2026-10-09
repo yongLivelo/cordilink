@@ -1,17 +1,30 @@
 import { useAuth } from "@/context/AuthContext";
-import { Paper, Group, UnstyledButton, Text } from "@mantine/core";
+import { supabase } from "@/lib/supabaseClient";
+import {
+  Paper,
+  Group,
+  Stack,
+  UnstyledButton,
+  Text,
+  Modal,
+  Button,
+} from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import { Link, useLocation } from "react-router";
 
 export default function BottomNav() {
   const location = useLocation();
-  const { role } = useAuth();
+  const { role, session } = useAuth();
   const BRAND_ORANGE = "#FF3900";
-
+  const [opened, { open, close }] = useDisclosure();
   // For Admin accounts: only the Dashboard is displayed on screen — no citizen tabs
   if (role === "admin") {
     return null;
   }
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
   return (
     <Paper
       hiddenFrom="sm" // Only visible on mobile 📱
@@ -65,7 +78,10 @@ export default function BottomNav() {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            color: location.pathname === "/community-reports" ? BRAND_ORANGE : "#888",
+            color:
+              location.pathname === "/community-reports"
+                ? BRAND_ORANGE
+                : "#888",
           }}
         >
           <svg
@@ -73,7 +89,9 @@ export default function BottomNav() {
             height="22"
             viewBox="0 0 24 24"
             fill="none"
-            stroke={location.pathname === "/community-reports" ? BRAND_ORANGE : "#888"}
+            stroke={
+              location.pathname === "/community-reports" ? BRAND_ORANGE : "#888"
+            }
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -84,7 +102,11 @@ export default function BottomNav() {
             <line x1="16" y1="17" x2="8" y2="17" />
             <polyline points="10 9 9 9 8 9" />
           </svg>
-          <Text size="xs" fw={location.pathname === "/community-reports" ? 700 : 500} mt={2}>
+          <Text
+            size="xs"
+            fw={location.pathname === "/community-reports" ? 700 : 500}
+            mt={2}
+          >
             Community
           </Text>
         </UnstyledButton>
@@ -144,15 +166,84 @@ export default function BottomNav() {
             strokeLinecap="round"
             strokeLinejoin="round"
           >
+            • 1 pts
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             <line x1="12" y1="8" x2="12" y2="14" />
             <line x1="9" y1="11" x2="15" y2="11" />
           </svg>
-          <Text size="xs" fw={location.pathname === "/my-reports" ? 700 : 500} mt={2}>
+          <Text
+            size="xs"
+            fw={location.pathname === "/my-reports" ? 700 : 500}
+            mt={2}
+          >
             My Reports
           </Text>
         </UnstyledButton>
+
+        <UnstyledButton
+          onClick={open}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            color: location.pathname === "/user" ? BRAND_ORANGE : "#888",
+          }}
+        >
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke={location.pathname === "/user" ? BRAND_ORANGE : "#888"}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            <line x1="12" y1="8" x2="12" y2="14" />
+            <line x1="9" y1="11" x2="15" y2="11" />
+          </svg>
+          <Text
+            size="xs"
+            fw={location.pathname === "/my-reports" ? 700 : 500}
+            mt={2}
+          >
+            User
+          </Text>
+        </UnstyledButton>
       </Group>
+
+      {/* Rendered outside the UnstyledButton so portal clicks don't bubble up to `open` */}
+      <Modal
+        opened={opened}
+        onClose={close}
+        closeOnClickOutside
+        title="Account"
+        centered
+        radius="md"
+      >
+        <Stack gap={2}>
+          <Text size="xs" c="dimmed">
+            Signed in as
+          </Text>
+          <Text size="sm" fw={600} style={{ wordBreak: "break-all" }}>
+            {session?.user.email}
+          </Text>
+        </Stack>
+        <Button
+          color="red"
+          variant="light"
+          fullWidth
+          radius="md"
+          mt="lg"
+          onClick={() => {
+            handleLogout();
+            close();
+          }}
+        >
+          Logout
+        </Button>
+      </Modal>
     </Paper>
   );
 }

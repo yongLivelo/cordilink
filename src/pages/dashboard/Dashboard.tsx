@@ -77,7 +77,9 @@ export default function Dashboard() {
   const metrics = useMemo(() => {
     const total = incidents.length;
     const pending = incidents.filter((i) => i.status === "pending").length;
-    const inProgress = incidents.filter((i) => i.status === "in-progress").length;
+    const inProgress = incidents.filter(
+      (i) => i.status === "in-progress",
+    ).length;
     const resolved = incidents.filter((i) => i.status === "resolved").length;
     return { total, pending, inProgress, resolved };
   }, [incidents]);
@@ -137,7 +139,8 @@ export default function Dashboard() {
 
   // Handlers (Preserving 100% of the original logic)
   const handleDelete = async (incidentId: number | string) => {
-    if (!confirm("Are you sure you want to delete this incident report?")) return;
+    if (!confirm("Are you sure you want to delete this incident report?"))
+      return;
 
     const { error } = await supabase
       .from("report")
@@ -174,13 +177,16 @@ export default function Dashboard() {
     } else {
       setIncidents((prev) =>
         prev.map((item) =>
-          item.id === reportId ? { ...item, status: newStatus as Incident["status"] } : item,
+          item.id === reportId
+            ? { ...item, status: newStatus as Incident["status"] }
+            : item,
         ),
       );
     }
   };
-
-  const [logoutModalOpened, { open: openLogout, close: closeLogout }] = useDisclosure(false);
+  const [opened, { open, close }] = useDisclosure();
+  const [logoutModalOpened, { open: openLogout, close: closeLogout }] =
+    useDisclosure(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleAdminLogout = async () => {
@@ -193,15 +199,27 @@ export default function Dashboard() {
   return (
     <Box style={{ width: "100%", margin: 0, padding: 0 }}>
       {/* LOGOUT CONFIRMATION MODAL */}
-      <Modal opened={logoutModalOpened} onClose={closeLogout} title="Confirm Logout" centered radius="md">
+      <Modal
+        opened={logoutModalOpened}
+        onClose={closeLogout}
+        title="Confirm Logout"
+        centered
+        radius="md"
+      >
         <Text size="sm" mb="lg">
-          Are you sure you want to sign out of the Admin Incident Dispatch Portal?
+          Are you sure you want to sign out of the Admin Incident Dispatch
+          Portal?
         </Text>
         <Group justify="flex-end">
           <Button variant="default" onClick={closeLogout} radius="md">
             Cancel
           </Button>
-          <Button color="red" onClick={handleAdminLogout} loading={isLoggingOut} radius="md">
+          <Button
+            color="red"
+            onClick={handleAdminLogout}
+            loading={isLoggingOut}
+            radius="md"
+          >
             Yes, Log Out
           </Button>
         </Group>
@@ -252,8 +270,9 @@ export default function Dashboard() {
               Central Incident Dispatch Portal
             </Title>
             <Text size="sm" c="rgba(255, 255, 255, 0.88)" mt={6} lh={1.5}>
-              Manage municipal field reports, update department triage status (CEPMO, CDRRMO,
-              City Engineering), and monitor community upvotes in real-time.
+              Manage municipal field reports, update department triage status
+              (CEPMO, CDRRMO, City Engineering), and monitor community upvotes
+              in real-time.
             </Text>
           </Box>
 
@@ -268,7 +287,12 @@ export default function Dashboard() {
           >
             <Group justify="space-between" align="center" gap="md" mb={4}>
               <Box>
-                <Text size="11px" fw={700} c="rgba(255,255,255,0.75)" tt="uppercase">
+                <Text
+                  size="11px"
+                  fw={700}
+                  c="rgba(255,255,255,0.75)"
+                  tt="uppercase"
+                >
                   Logged in as
                 </Text>
                 <Text size="sm" fw={800} c="#ffffff">
@@ -310,7 +334,12 @@ export default function Dashboard() {
                   display: "inline-block",
                 }}
               />
-              <Text size="xs" fw={800} c={BRAND.navy} style={{ letterSpacing: "0.4px" }}>
+              <Text
+                size="xs"
+                fw={800}
+                c={BRAND.navy}
+                style={{ letterSpacing: "0.4px" }}
+              >
                 Live Database Sync
               </Text>
             </Box>
@@ -321,10 +350,23 @@ export default function Dashboard() {
       {/* =========================================================================
           2. SPACE UTILIZATION: EXECUTIVE KPI METRIC CARDS (Full Span, Borderless)
           ========================================================================= */}
-      <Box px={{ base: "md", md: "xl", lg: 36 }} pt={{ base: "md", md: "xl" }} pb="xl" style={{ width: "100%" }}>
+      <Box
+        px={{ base: "md", md: "xl", lg: 36 }}
+        pt={{ base: "md", md: "xl" }}
+        pb="xl"
+        style={{ width: "100%" }}
+      >
         <SimpleGrid cols={{ base: 2, md: 4 }} spacing="md">
           {/* Metric 1: Total Incidents */}
-          <Card shadow="sm" radius="lg" p="md" style={{ backgroundColor: "#ffffff", boxShadow: "0 2px 10px rgba(0, 57, 83, 0.05)" }}>
+          <Card
+            shadow="sm"
+            radius="lg"
+            p="md"
+            style={{
+              backgroundColor: "#ffffff",
+              boxShadow: "0 2px 10px rgba(0, 57, 83, 0.05)",
+            }}
+          >
             <Text size="xs" fw={700} c="gray.6" tt="uppercase">
               Total Incidents Logged
             </Text>
@@ -341,7 +383,10 @@ export default function Dashboard() {
             shadow="sm"
             radius="lg"
             p="md"
-            style={{ backgroundColor: "#FFF8F5", boxShadow: "0 2px 10px rgba(255, 57, 0, 0.06)" }}
+            style={{
+              backgroundColor: "#FFF8F5",
+              boxShadow: "0 2px 10px rgba(255, 57, 0, 0.06)",
+            }}
           >
             <Group justify="space-between" align="center">
               <Text size="xs" fw={700} c={BRAND.orange} tt="uppercase">
@@ -364,7 +409,10 @@ export default function Dashboard() {
             shadow="sm"
             radius="lg"
             p="md"
-            style={{ backgroundColor: "#F2F9F9", boxShadow: "0 2px 10px rgba(2, 127, 141, 0.06)" }}
+            style={{
+              backgroundColor: "#F2F9F9",
+              boxShadow: "0 2px 10px rgba(2, 127, 141, 0.06)",
+            }}
           >
             <Group justify="space-between" align="center">
               <Text size="xs" fw={700} c={BRAND.teal} tt="uppercase">
@@ -387,7 +435,10 @@ export default function Dashboard() {
             shadow="sm"
             radius="lg"
             p="md"
-            style={{ backgroundColor: "#F2F9F4", boxShadow: "0 2px 10px rgba(43, 138, 62, 0.06)" }}
+            style={{
+              backgroundColor: "#F2F9F4",
+              boxShadow: "0 2px 10px rgba(43, 138, 62, 0.06)",
+            }}
           >
             <Group justify="space-between" align="center">
               <Text size="xs" fw={700} c="green.8" tt="uppercase">
@@ -409,9 +460,23 @@ export default function Dashboard() {
         {/* =========================================================================
             3. INTERACTIVE CONTROL BAR (SEARCH, CATEGORY, STATUS TABS, SORT - Borderless)
             ========================================================================= */}
-        <Card shadow="sm" radius="lg" p="md" mt="xl" style={{ backgroundColor: "#ffffff", boxShadow: "0 2px 10px rgba(0, 57, 83, 0.05)" }}>
+        <Card
+          shadow="sm"
+          radius="lg"
+          p="md"
+          mt="xl"
+          style={{
+            backgroundColor: "#ffffff",
+            boxShadow: "0 2px 10px rgba(0, 57, 83, 0.05)",
+          }}
+        >
           <Stack gap="md">
-            <Group justify="space-between" align="flex-end" wrap="wrap" gap="md">
+            <Group
+              justify="space-between"
+              align="flex-end"
+              wrap="wrap"
+              gap="md"
+            >
               {/* Search Bar */}
               <TextInput
                 placeholder="Search by title, description, barangay..."
@@ -420,7 +485,17 @@ export default function Dashboard() {
                 style={{ flex: 1, minWidth: 260 }}
                 radius="md"
                 leftSection={
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#718096" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#718096"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
                     <circle cx="11" cy="11" r="8" />
                     <line x1="21" y1="21" x2="16.65" y2="16.65" />
                   </svg>
@@ -460,7 +535,10 @@ export default function Dashboard() {
               {[
                 { label: `All (${metrics.total})`, value: "all" },
                 { label: `Pending (${metrics.pending})`, value: "pending" },
-                { label: `In-Progress (${metrics.inProgress})`, value: "in-progress" },
+                {
+                  label: `In-Progress (${metrics.inProgress})`,
+                  value: "in-progress",
+                },
                 { label: `Resolved (${metrics.resolved})`, value: "resolved" },
               ].map((tab) => {
                 const isActive = selectedStatusTab === tab.value;
@@ -499,14 +577,21 @@ export default function Dashboard() {
             <Stack gap="xl">
               <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="lg">
                 {paginatedReports.map((incidentItem) => (
-                  <ReportCard
-                    key={incidentItem.id}
-                    report={incidentItem}
-                    onDelete={() => handleDelete(incidentItem.id)}
-                    onChangeStatus={(newStatus) => {
-                      handleChangeStatus(incidentItem.id, newStatus);
-                    }}
-                  />
+                  <>
+                    <Modal opened={opened} onClose={close}>
+                      <Button
+                        onClick={() => handleDelete(incidentItem.id)}
+                      ></Button>
+                    </Modal>
+                    <ReportCard
+                      key={incidentItem.id}
+                      report={incidentItem}
+                      onDelete={() => handleDelete(incidentItem.id)}
+                      onChangeStatus={(newStatus) => {
+                        handleChangeStatus(incidentItem.id, newStatus);
+                      }}
+                    />
+                  </>
                 ))}
               </SimpleGrid>
 
@@ -530,7 +615,8 @@ export default function Dashboard() {
                   No incident reports matching your filter criteria.
                 </Text>
                 <Text size="xs" c="dimmed">
-                  Try clearing your search query or selecting a different status filter.
+                  Try clearing your search query or selecting a different status
+                  filter.
                 </Text>
               </Stack>
             </Center>

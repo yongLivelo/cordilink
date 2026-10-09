@@ -13,10 +13,15 @@ import Signup from "@/pages/signup";
 import ProctedRoute from "@/components/ProctedRoute";
 import AuthProvider from "@/context/AuthContext";
 import Dashboard from "@/pages/dashboard";
+import "@mantine/core/styles.css";
+import "@mantine/notifications/styles.css";
+import { Notifications } from "@mantine/notifications";
+
 export default function App() {
   return (
     <AuthProvider>
       <MantineProvider forceColorScheme="light">
+        <Notifications position="top-right" />
         <Suspense>
           <BrowserRouter>
             <Routes>
@@ -31,6 +36,7 @@ export default function App() {
 
               <Route element={<ProctedRoute allowedRoles={[null]} />}>
                 <Route element={<Layout />}>
+                  <Route path="/" element={<Home />} />
                   <Route path="/submit-reports" element={<SubmitReport />} />
                   <Route path="/my-reports" element={<MyReports />} />
                   <Route
