@@ -16,12 +16,14 @@ import Dashboard from "@/pages/dashboard";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import { Notifications } from "@mantine/notifications";
+import PwaUpdatePrompt from "@/components/PwaUpdatePrompt";
 
 export default function App() {
   return (
     <AuthProvider>
       <MantineProvider forceColorScheme="light">
         <Notifications position="top-right" />
+        <PwaUpdatePrompt />
         <Suspense>
           <BrowserRouter>
             <Routes>

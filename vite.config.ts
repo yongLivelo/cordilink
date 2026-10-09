@@ -11,7 +11,7 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()] }),
     VitePWA({
-      registerType: "prompt",
+      registerType: "autoUpdate",
       manifest: {
         name: "Cordilink",
         description: "Incident reporting application",
@@ -30,10 +30,10 @@ export default defineConfig({
             type: "image/png",
           },
           {
-            src: "pwa-512x512.png",
+            src: "pwa-512x512-maskable.png",
             sizes: "512x512",
             type: "image/png",
-            purpose: "any maskable",
+            purpose: "maskable",
           },
         ],
       },
