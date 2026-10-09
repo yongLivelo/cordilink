@@ -7,12 +7,13 @@ import {
   Title,
   UnstyledButton,
 } from "@mantine/core";
+import { useMemo } from "react";
 
 const BRAND = {
   orange: "#FF3900", // Action / Alert / Primary Accent
   navy: "#003953", // Deep Mountain Navy / Headers
   teal: "#027F8D", // Mountain Teal / Primary Branding
-};
+} as const;
 
 export type StatusOption = { label: string; value: string };
 
@@ -23,7 +24,12 @@ const DEFAULT_STATUS_OPTIONS: StatusOption[] = [
   { label: "Resolved", value: "resolved" },
 ];
 
-interface ReportsToolbarProps {
+const SORT_OPTIONS = [
+  { value: "latest", label: "Sort: Latest" },
+  { value: "oldest", label: "Sort: Oldest" },
+];
+
+export interface ReportsToolbarProps {
   /** Page heading — omit to render the controls only */
   title?: string;
   subtitle?: string;
@@ -42,11 +48,6 @@ interface ReportsToolbarProps {
   onSortChange: (sort: string | null) => void;
 }
 
-/**
- * Shared search / category-filter / status-pills / sort toolbar used by
- * MyReports, CommunityReports, and the admin Dashboard.
- * Renders a fragment so its sections slot straight into the parent Stack.
- */
 export default function ReportsToolbar({
   title,
   subtitle,
@@ -63,7 +64,9 @@ export default function ReportsToolbar({
   onSortChange,
 }: ReportsToolbarProps) {
   const statusTabs = statusOptions ?? DEFAULT_STATUS_OPTIONS;
-  const quickCategories = ["All", ...categories];
+
+  // Memoize category list to prevent unnecessary array recreation on re-renders
+  const quickCategories = useMemo(() => ["All", ...categories], [categories]);
 
   return (
     <>
@@ -106,18 +109,27 @@ export default function ReportsToolbar({
       </Box>
 
       {/* Styled Interactive Category Chips */}
-      <Group gap={6} align="center" wrap="wrap">
+      <Group
+        gap={6}
+        align="center"
+        wrap="wrap"
+        role="region"
+        aria-label="Category filters"
+      >
         <Text size="xs" fw={700} c={BRAND.navy} mr={4}>
           Filter:
         </Text>
         {quickCategories.map((cat) => {
           const isSelected =
-            cat === "All" ? selectedCategory === null : selectedCategory === cat;
+            cat === "All"
+              ? selectedCategory === null
+              : selectedCategory === cat;
 
           return (
             <UnstyledButton
               key={cat}
               onClick={() => onCategoryChange(cat === "All" ? null : cat)}
+              aria-pressed={isSelected}
               style={{
                 padding: "5px 14px",
                 borderRadius: "20px",
@@ -165,13 +177,15 @@ export default function ReportsToolbar({
 
         <Group gap="md" align="center" wrap="wrap">
           {/* Status Tab Filter */}
-          <Group gap={6}>
+          <Group gap={6} role="tablist" aria-label="Status filter">
             {statusTabs.map((tab) => {
               const isActive = selectedStatus === tab.value;
               return (
                 <UnstyledButton
                   key={tab.value}
                   onClick={() => onStatusChange(tab.value)}
+                  role="tab"
+                  aria-selected={isActive}
                   style={{
                     padding: "6px 14px",
                     borderRadius: "8px",
@@ -192,16 +206,14 @@ export default function ReportsToolbar({
           {/* Cleanly Styled Sort By Dropdown */}
           <Select
             placeholder="Sort By"
-            data={[
-              { value: "latest", label: "Sort: Latest" },
-              { value: "oldest", label: "Sort: Oldest" },
-            ]}
+            data={SORT_OPTIONS}
             value={sortOrder}
             onChange={onSortChange}
             w={140}
             size="xs"
             radius="md"
             allowDeselect={false}
+            aria-label="Sort order"
             styles={{
               input: {
                 backgroundColor: "#ffffff",

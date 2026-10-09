@@ -470,6 +470,7 @@ export default function Dashboard() {
         >
           <Stack gap="md">
             <ReportsToolbar
+              title="All Incidents"
               searchPlaceholder="Search by title, description, barangay..."
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
