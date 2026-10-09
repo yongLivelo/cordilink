@@ -89,7 +89,10 @@ export function useReportSubmission({
       const { imageUrl, base64Clean } = await uploadImage(image);
 
       // 2. Analyze category via Edge Function
-      const category = await aiCategorize(base64Clean, description);
+      const { category, embedding } = await aiCategorize(
+        base64Clean,
+        description,
+      );
 
       // 3. Look up nearby active incidents
       const nearbyIncidents = await findNearbyIncidents(
@@ -97,6 +100,7 @@ export function useReportSubmission({
         lat,
         lng,
         category,
+        embedding,
       );
 
       const draft: ReportDraft = {
@@ -107,6 +111,7 @@ export function useReportSubmission({
         imageUrl,
         description,
         locationPoint,
+        embedding,
       };
 
       if (nearbyIncidents.length > 0) {
