@@ -38,8 +38,24 @@ export default defineConfig({
         ],
       },
 
+      devOptions: {
+        enabled: true, // 👈 This forces the service worker to run on localhost
+        type: "development",
+      },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
+        runtimeCaching: [
+          {
+            // Matches any request going to your supabase instance
+            urlPattern: /^https:\/\/.*\.supabase\.co\/.*$/,
+            handler: "NetworkOnly",
+            options: {
+              backgroundSync: {
+                name: "supabase-retry-queue", // Optional: retries requests when back online
+              },
+            },
+          },
+        ],
       },
     }),
   ],
