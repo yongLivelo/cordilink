@@ -11,6 +11,7 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()] }),
     VitePWA({
+      manifestFilename: "manifest.json",
       registerType: "autoUpdate",
       manifest: {
         name: "Cordilink",
