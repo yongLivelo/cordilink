@@ -10,8 +10,8 @@ import {
   uploadImage,
 } from "../services";
 import type { ReportDraft } from "../types";
-import type { ReportLocation } from "./LocationSchema";
 import { notifications } from "@mantine/notifications";
+import type { ReportLocation } from "@/components/Location/LocationSchema";
 
 interface UseReportSubmissionOptions {
   /** Called after a report is saved so the caller can reset its form. */
