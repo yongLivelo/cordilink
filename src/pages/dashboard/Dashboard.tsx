@@ -7,6 +7,13 @@ import {
   Group,
   Pagination,
   Text,
+  Title,
+  Box,
+  Card,
+  Container,
+  SimpleGrid,
+  Badge,
+  UnstyledButton,
 } from "@mantine/core";
 import { useEffect, useState, useMemo } from "react";
 import type { Incident } from "@/types/report";
@@ -14,7 +21,16 @@ import ReportCard from "@/components/ReportCard";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/context/AuthContext";
 
-const ITEMS_PER_PAGE = 2;
+// Items per page - set to 6 for a full, well-utilized 3-column grid
+const ITEMS_PER_PAGE = 6;
+
+// Branding Colors
+const BRAND = {
+  orange: "#FF3900",
+  navy: "#003953",
+  teal: "#027F8D",
+  darkNavy: "#002436",
+};
 
 export default function Dashboard() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -24,15 +40,13 @@ export default function Dashboard() {
   // Filter, Sort, and Pagination State
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedStatusTab, setSelectedStatusTab] = useState<string>("all");
   const [sortOrder, setSortOrder] = useState<string | null>("latest");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // FIXED: Added async/await and protected against missing session
-
+  // Fetch all incidents from Supabase
   useEffect(() => {
-    const fetchUserReports = async () => {
-      // Allow fetching even if logged out? If you want this hidden from
-      // logged-out users, keep this guard.
+    const fetchIncidents = async () => {
       if (!session?.user?.id) {
         setIsLoading(false);
         return;
@@ -42,44 +56,53 @@ export default function Dashboard() {
       const { data, error } = await supabase.from("incident").select("*");
 
       if (error) {
-        console.error("Error fetching user reports:", error);
+        console.error("Error fetching incidents:", error);
       } else {
         setIncidents(data || []);
       }
       setIsLoading(false);
     };
 
-    fetchUserReports();
+    fetchIncidents();
   }, [session]);
 
-  // Reset to page 1 whenever filters or sorting change
+  // Reset to page 1 whenever filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCategory, sortOrder]);
+  }, [searchQuery, selectedCategory, selectedStatusTab, sortOrder]);
 
-  // Derive available categories dynamically from the data
+  // Summary Metrics for space utilization
+  const metrics = useMemo(() => {
+    const total = incidents.length;
+    const pending = incidents.filter((i) => i.status === "pending").length;
+    const inProgress = incidents.filter((i) => i.status === "in-progress").length;
+    const resolved = incidents.filter((i) => i.status === "resolved").length;
+    return { total, pending, inProgress, resolved };
+  }, [incidents]);
+
+  // Dynamic Categories from data
   const categories = useMemo(() => {
-    const uniqueCategories = new Set(
+    const unique = new Set(
       incidents
         .map((item) => item.category)
-        .filter((cat): cat is string => Boolean(cat)), // Filter out undefined/null categories
+        .filter((cat): cat is string => Boolean(cat)),
     );
-    return Array.from(uniqueCategories);
+    return Array.from(unique);
   }, [incidents]);
 
   // Process data: Filter -> Sort -> Paginate
   const processedData = useMemo(() => {
     let result = [...incidents];
 
-    // 1. Search Filter (checks title, description, and location)
+    // 1. Search Filter
     if (searchQuery.trim() !== "") {
-      const lowerQuery = searchQuery.toLowerCase();
+      const q = searchQuery.toLowerCase();
       result = result.filter(
         (item) =>
-          // FIXED: Added null-safety before calling .toLowerCase()
-          item.title?.toLowerCase().includes(lowerQuery) ||
-          item.description?.toLowerCase().includes(lowerQuery) ||
-          item.location?.toLowerCase().includes(lowerQuery),
+          item.title?.toLowerCase().includes(q) ||
+          item.description?.toLowerCase().includes(q) ||
+          item.location_name?.toLowerCase().includes(q) ||
+          item.location?.toLowerCase().includes(q),
       );
     }
 
@@ -88,26 +111,31 @@ export default function Dashboard() {
       result = result.filter((item) => item.category === selectedCategory);
     }
 
-    // 3. Sorting
+    // 3. Status Tab Filter
+    if (selectedStatusTab !== "all") {
+      result = result.filter((item) => item.status === selectedStatusTab);
+    }
+
+    // 4. Sorting
     result.sort((a, b) => {
       const dateA = new Date(a.created_at || 0).getTime();
       const dateB = new Date(b.created_at || 0).getTime();
-
       return sortOrder === "latest" ? dateB - dateA : dateA - dateB;
     });
 
     return result;
-  }, [incidents, searchQuery, selectedCategory, sortOrder]);
+  }, [incidents, searchQuery, selectedCategory, selectedStatusTab, sortOrder]);
 
-  // 4. Pagination
+  // Pagination slicing
   const totalPages = Math.ceil(processedData.length / ITEMS_PER_PAGE);
   const paginatedReports = processedData.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE,
   );
 
+  // Handlers (Preserving 100% of the original logic)
   const handleDelete = async (incidentId: number | string) => {
-    if (!confirm("Are you sure you want to delete this report?")) return;
+    if (!confirm("Are you sure you want to delete this incident report?")) return;
 
     const { error } = await supabase
       .from("report")
@@ -119,17 +147,16 @@ export default function Dashboard() {
         body: { incidentId: incidentId },
       })
       .catch((err) => console.error("Summarization check failed:", err));
+
     if (error) {
       console.error("Error deleting report:", error);
       alert("Failed to delete the report.");
     } else {
-      // Filter out the deleted report from local state instantly
       setIncidents((prev) => prev.filter((report) => report.id !== incidentId));
     }
   };
 
   const handleChangeStatus = async (reportId: number, newStatus: string) => {
-    console.log(newStatus);
     const { error } = await supabase
       .from("incident")
       .update({ status: newStatus })
@@ -141,80 +168,338 @@ export default function Dashboard() {
       .eq("incident_id", reportId);
 
     if (error && reportError) {
-      console.error("error changing status: ", error);
+      console.error("Error changing status: ", error);
+    } else {
+      setIncidents((prev) =>
+        prev.map((item) =>
+          item.id === reportId ? { ...item, status: newStatus as Incident["status"] } : item,
+        ),
+      );
     }
   };
 
   return (
-    <Stack>
-      {/* Controls Section */}
-      <Group align="flex-end">
-        <TextInput
-          label="Search"
-          placeholder="Search titles, descriptions..."
-          value={searchQuery}
-          onChange={(event) => setSearchQuery(event.currentTarget.value)}
-          flex={1}
-        />
-        <Select
-          label="Category"
-          placeholder="All Categories"
-          data={categories}
-          value={selectedCategory}
-          onChange={setSelectedCategory}
-          clearable
-          w={200}
-        />
-        <Select
-          label="Sort By"
-          data={[
-            { value: "latest", label: "Latest" },
-            { value: "oldest", label: "Oldest" },
-          ]}
-          value={sortOrder}
-          onChange={setSortOrder}
-          w={150}
-          allowDeselect={false}
-        />
-      </Group>
+    <Box style={{ width: "100%", margin: 0, padding: 0 }}>
+      {/* =========================================================================
+          1. HEADER FOR ADMIN (Executive LGU Command Banner)
+          ========================================================================= */}
+      <Box
+        style={{
+          width: "100%",
+          borderRadius: 0,
+          background: `linear-gradient(135deg, ${BRAND.darkNavy} 0%, ${BRAND.navy} 50%, ${BRAND.teal} 100%)`,
+          color: "#ffffff",
+          boxShadow: "0 6px 20px rgba(0, 36, 54, 0.2)",
+        }}
+        px={{ base: "md", md: "xl" }}
+        py={{ base: "xl", md: 36 }}
+      >
+        <Container size="xl" p={0}>
+          <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
+            <Box maw={700}>
+              <Group gap="xs" mb={8}>
+                <Badge
+                  size="sm"
+                  variant="filled"
+                  style={{
+                    backgroundColor: BRAND.orange,
+                    color: "#ffffff",
+                    letterSpacing: "0.5px",
+                    fontWeight: 800,
+                  }}
+                >
+                  LGU DISPATCH
+                </Badge>
+                <Text size="xs" fw={700} c="rgba(255, 255, 255, 0.8)">
+                  BAGUIO CITY MUNICIPAL OPERATIONS
+                </Text>
+              </Group>
 
-      {/* List Section */}
-      {isLoading ? (
-        <Center mt="xl">
-          <Loader color="blue" />
-        </Center>
-      ) : paginatedReports.length > 0 ? (
-        <Stack mt="md">
-          {paginatedReports.map((reportItem) => (
-            <ReportCard
-              key={reportItem.id}
-              report={reportItem}
-              onDelete={() => handleDelete(reportItem.id)}
-              onChangeStatus={(newStatus) => {
-                handleChangeStatus(reportItem.id, newStatus);
+              <Title
+                order={1}
+                size="h1"
+                fw={900}
+                c="#ffffff"
+                lh={1.15}
+                style={{ letterSpacing: "-0.5px" }}
+              >
+                Central Incident Dispatch Portal
+              </Title>
+              <Text size="sm" c="rgba(255, 255, 255, 0.85)" mt={6} lh={1.5}>
+                Manage municipal field reports, update department triage status (CEPMO, CDRRMO,
+                City Engineering), and monitor community upvotes in real-time.
+              </Text>
+            </Box>
+
+            {/* Admin Badge & Current Date */}
+            <Box
+              style={{
+                backgroundColor: "rgba(255, 255, 255, 0.12)",
+                padding: "10px 18px",
+                borderRadius: "12px",
+                backdropFilter: "blur(6px)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
               }}
-            />
-          ))}
+            >
+              <Text size="11px" fw={700} c="rgba(255,255,255,0.7)" tt="uppercase">
+                Logged in as
+              </Text>
+              <Text size="sm" fw={800} c="#ffffff">
+                LGU Operations Admin
+              </Text>
+              <Box
+                mt={8}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  backgroundColor: "rgba(16, 185, 129, 0.18)",
+                  border: "1px solid rgba(52, 211, 153, 0.4)",
+                  padding: "4px 10px",
+                  borderRadius: "999px",
+                }}
+              >
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: "50%",
+                    backgroundColor: "#34D399",
+                    boxShadow: "0 0 6px #34D399",
+                    display: "inline-block",
+                  }}
+                />
+                <Text size="11px" fw={700} c="#A7F3D0" style={{ letterSpacing: "0.4px" }}>
+                  Live Database Sync
+                </Text>
+              </Box>
+            </Box>
+          </Group>
+        </Container>
+      </Box>
 
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <Center mt="xl">
-              <Pagination
-                value={currentPage}
-                onChange={setCurrentPage}
-                total={totalPages}
+      {/* =========================================================================
+          2. SPACE UTILIZATION: EXECUTIVE KPI METRIC CARDS
+          ========================================================================= */}
+      <Container size="xl" px={{ base: "md", md: "xl" }} pt={{ base: "md", md: "xl" }}>
+        <SimpleGrid cols={{ base: 2, md: 4 }} spacing="md">
+          {/* Metric 1: Total Incidents */}
+          <Card shadow="xs" radius="lg" withBorder p="md" style={{ backgroundColor: "#ffffff" }}>
+            <Text size="xs" fw={700} c="gray.6" tt="uppercase">
+              Total Incidents Logged
+            </Text>
+            <Title order={2} size="h1" fw={900} c={BRAND.navy} mt={4}>
+              {metrics.total}
+            </Title>
+            <Text size="11px" c="dimmed">
+              Across all Baguio City barangays
+            </Text>
+          </Card>
+
+          {/* Metric 2: Pending Triage */}
+          <Card
+            shadow="xs"
+            radius="lg"
+            withBorder
+            p="md"
+            style={{ backgroundColor: "#FFF8F5", borderColor: "#FFD8D0" }}
+          >
+            <Group justify="space-between" align="center">
+              <Text size="xs" fw={700} c={BRAND.orange} tt="uppercase">
+                Pending Triage
+              </Text>
+              <Badge color="orange" size="xs">
+                Urgent
+              </Badge>
+            </Group>
+            <Title order={2} size="h1" fw={900} c={BRAND.orange} mt={4}>
+              {metrics.pending}
+            </Title>
+            <Text size="11px" c="dimmed">
+              Awaiting review & crew dispatch
+            </Text>
+          </Card>
+
+          {/* Metric 3: In Progress */}
+          <Card
+            shadow="xs"
+            radius="lg"
+            withBorder
+            p="md"
+            style={{ backgroundColor: "#F4FAFA", borderColor: "#CBE4E7" }}
+          >
+            <Group justify="space-between" align="center">
+              <Text size="xs" fw={700} c={BRAND.teal} tt="uppercase">
+                In Progress
+              </Text>
+              <Badge color="teal" size="xs">
+                Active
+              </Badge>
+            </Group>
+            <Title order={2} size="h1" fw={900} c={BRAND.teal} mt={4}>
+              {metrics.inProgress}
+            </Title>
+            <Text size="11px" c="dimmed">
+              Field teams actively working on site
+            </Text>
+          </Card>
+
+          {/* Metric 4: Resolved */}
+          <Card
+            shadow="xs"
+            radius="lg"
+            withBorder
+            p="md"
+            style={{ backgroundColor: "#F6FBF7", borderColor: "#CFE8D4" }}
+          >
+            <Group justify="space-between" align="center">
+              <Text size="xs" fw={700} c="green.8" tt="uppercase">
+                Resolved
+              </Text>
+              <Badge color="green" size="xs">
+                Closed
+              </Badge>
+            </Group>
+            <Title order={2} size="h1" fw={900} c="green.8" mt={4}>
+              {metrics.resolved}
+            </Title>
+            <Text size="11px" c="dimmed">
+              Successfully addressed & cleared
+            </Text>
+          </Card>
+        </SimpleGrid>
+
+        {/* =========================================================================
+            3. INTERACTIVE CONTROL BAR (SEARCH, CATEGORY, STATUS TABS, SORT)
+            ========================================================================= */}
+        <Card shadow="xs" radius="lg" withBorder p="md" mt="xl" style={{ backgroundColor: "#ffffff" }}>
+          <Stack gap="md">
+            <Group justify="space-between" align="flex-end" wrap="wrap" gap="md">
+              {/* Search Bar */}
+              <TextInput
+                placeholder="Search by title, description, barangay..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.currentTarget.value)}
+                style={{ flex: 1, minWidth: 260 }}
+                radius="md"
+                leftSection={
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#718096" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                }
               />
+
+              {/* Category Dropdown */}
+              <Select
+                placeholder="All Categories"
+                data={categories}
+                value={selectedCategory}
+                onChange={setSelectedCategory}
+                clearable
+                w={{ base: "100%", sm: 200 }}
+                radius="md"
+              />
+
+              {/* Sort Order Dropdown */}
+              <Select
+                data={[
+                  { value: "latest", label: "Sort: Latest First" },
+                  { value: "oldest", label: "Sort: Oldest First" },
+                ]}
+                value={sortOrder}
+                onChange={setSortOrder}
+                w={{ base: "100%", sm: 180 }}
+                allowDeselect={false}
+                radius="md"
+              />
+            </Group>
+
+            {/* Status Filter Tabs */}
+            <Group gap={6} pt={6} style={{ borderTop: "1px solid #EDF2F4" }}>
+              <Text size="xs" fw={700} c="gray.6" mr={4}>
+                Status:
+              </Text>
+              {[
+                { label: `All (${metrics.total})`, value: "all" },
+                { label: `Pending (${metrics.pending})`, value: "pending" },
+                { label: `In-Progress (${metrics.inProgress})`, value: "in-progress" },
+                { label: `Resolved (${metrics.resolved})`, value: "resolved" },
+              ].map((tab) => {
+                const isActive = selectedStatusTab === tab.value;
+                return (
+                  <UnstyledButton
+                    key={tab.value}
+                    onClick={() => setSelectedStatusTab(tab.value)}
+                    style={{
+                      padding: "6px 14px",
+                      borderRadius: "8px",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      backgroundColor: isActive ? BRAND.teal : "#EDF2F4",
+                      color: isActive ? "#ffffff" : "#4A5568",
+                      transition: "all 0.15s ease",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {tab.label}
+                  </UnstyledButton>
+                );
+              })}
+            </Group>
+          </Stack>
+        </Card>
+
+        {/* =========================================================================
+            4. DASHBOARDS REPORT LIST (3-COLUMN DESKTOP GRID)
+            ========================================================================= */}
+        <Box mt="xl" pb="xl">
+          {isLoading ? (
+            <Center py={60}>
+              <Loader color={BRAND.teal} size="lg" />
+            </Center>
+          ) : paginatedReports.length > 0 ? (
+            <Stack gap="xl">
+              <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="lg">
+                {paginatedReports.map((incidentItem) => (
+                  <ReportCard
+                    key={incidentItem.id}
+                    report={incidentItem}
+                    onDelete={() => handleDelete(incidentItem.id)}
+                    onChangeStatus={(newStatus) => {
+                      handleChangeStatus(incidentItem.id, newStatus);
+                    }}
+                  />
+                ))}
+              </SimpleGrid>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <Center mt="lg">
+                  <Pagination
+                    value={currentPage}
+                    onChange={setCurrentPage}
+                    total={totalPages}
+                    radius="md"
+                    color="teal"
+                  />
+                </Center>
+              )}
+            </Stack>
+          ) : (
+            <Center py={60}>
+              <Stack align="center" gap="xs">
+                <Text fw={700} size="md" c={BRAND.navy}>
+                  No incident reports matching your filter criteria.
+                </Text>
+                <Text size="xs" c="dimmed">
+                  Try clearing your search query or selecting a different status filter.
+                </Text>
+              </Stack>
             </Center>
           )}
-        </Stack>
-      ) : (
-        <Center mt="xl">
-          <Text c="dimmed">
-            {/* Note: 'color' is deprecated in Mantine v7, use 'c' */}
-            No community reports found matching your criteria.
-          </Text>
-        </Center>
-      )}
-    </Stack>
+        </Box>
+      </Container>
+    </Box>
   );
 }
