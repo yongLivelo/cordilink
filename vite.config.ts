@@ -11,6 +11,7 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()] }),
     VitePWA({
+      manifestFilename: "manifest.json",
       registerType: "autoUpdate",
       manifest: {
         name: "Cordilink",
@@ -36,11 +37,6 @@ export default defineConfig({
             purpose: "maskable",
           },
         ],
-      },
-
-      devOptions: {
-        enabled: true, // 👈 This forces the service worker to run on localhost
-        type: "development",
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
