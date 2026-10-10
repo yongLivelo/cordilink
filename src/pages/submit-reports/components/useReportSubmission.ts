@@ -35,11 +35,11 @@ export function useReportSubmission({
 
   // Core execution once an incident choice is finalized
   const finalizeReportSubmission = async (
-    incidentId: string | number,
+    incidentId: number,
     draft: ReportDraft,
   ) => {
     if (!session) return;
-
+    upvoteIncident(incidentId, session.user.id);
     // 1. Create the report in the database
     await createReport({
       userId: session.user.id,
@@ -143,7 +143,7 @@ export function useReportSubmission({
   };
 
   // Triggered when user clicks "Yes, this is the same incident"
-  const selectExistingIncident = async (incidentId: string | number) => {
+  const selectExistingIncident = async (incidentId: number) => {
     if (!pendingDraft) return;
 
     setLoading(true);
@@ -155,6 +155,19 @@ export function useReportSubmission({
     } finally {
       setLoading(false);
     }
+  };
+
+  const upvoteIncident = async (incidentId: number, userId: string) => {
+    await supabase
+      .from("vote")
+      .delete()
+      .eq("incident_id", incidentId)
+      .eq("user_id", userId);
+    await supabase.from("vote").insert({
+      incident_id: incidentId,
+      user_id: userId,
+      vote_type: "up",
+    });
   };
 
   // Triggered if user decides none of the matches apply and forces a new incident

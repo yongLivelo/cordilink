@@ -18,6 +18,7 @@ import { useEffect, useState, useMemo } from "react";
 import type { Incident } from "@/types/report";
 import ReportCard from "@/components/ReportCard";
 import ReportsToolbar from "@/components/ReportsToolbar";
+import ReportsMapButton from "@/components/ReportsMapButton";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/context/AuthContext";
 
@@ -543,6 +544,7 @@ export default function Dashboard() {
         >
           <Stack gap="md">
             <ReportsToolbar
+              title="All Incidents"
               searchPlaceholder="Search by title, description, barangay..."
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
@@ -570,6 +572,13 @@ export default function Dashboard() {
             4. DASHBOARDS REPORT LIST (3-COLUMN DESKTOP GRID)
             ========================================================================= */}
         <Box mt="xl" pb="xl">
+          <Group justify="space-between" mb="md">
+            <Text fw={700} size="sm" c={BRAND.navy} tt="uppercase">
+              Reports
+            </Text>
+            <ReportsMapButton reports={incidents} />
+          </Group>
+
           {isLoading ? (
             <Center py={60}>
               <Loader color={BRAND.teal} size="lg" />

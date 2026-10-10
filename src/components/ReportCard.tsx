@@ -11,6 +11,7 @@ import {
   Avatar,
   ActionIcon,
   Skeleton,
+  Modal,
 } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
@@ -77,6 +78,7 @@ export default function ReportCard({
     "none",
   );
   const [isVoting, setIsVoting] = useState(false);
+  const [imagePreview, setImagePreview] = useState(false);
 
   // Sync initial status & fetch incident details if needed
   useEffect(() => {
@@ -341,255 +343,289 @@ export default function ReportCard({
   };
 
   return (
-    <Card
-      shadow="xs"
-      padding={0}
-      radius="lg"
-      withBorder
-      style={{
-        backgroundColor: "#ffffff",
-        borderColor: "#E5ECEE",
-        overflow: "hidden",
-        transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-4px)";
-        e.currentTarget.style.boxShadow = "0 12px 24px rgba(0, 57, 83, 0.1)";
-        e.currentTarget.style.borderColor = "#027F8D";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
-        e.currentTarget.style.boxShadow = "";
-        e.currentTarget.style.borderColor = "#E5ECEE";
-      }}
-    >
-      {/* Image Container with Overlay Pills */}
-      <Card.Section style={{ position: "relative", overflow: "hidden" }}>
+    <>
+      {/* Full-size image preview */}
+      <Modal
+        opened={imagePreview}
+        onClose={() => setImagePreview(false)}
+        centered
+        size="xl"
+        padding="sm"
+        title={
+          <Text fw={700} c="#003953">
+            {displayTitle}
+          </Text>
+        }
+      >
         <Image
           src={image}
-          height={190}
           alt={category || "Incident"}
+          fit="contain"
+          radius="md"
+          mah="70vh"
           fallbackSrc="https://placehold.co/600x340/003953/FFFFFF?text=CordiLink+Incident"
-          style={{ transition: "transform 0.3s ease" }}
         />
-
-        {/* Status Badge (skeleton while the incident status is being fetched) */}
-        {loading ? (
-          <Box style={{ position: "absolute", top: 12, left: 12, zIndex: 2 }}>
-            <Skeleton width={76} height={24} radius={999} />
-          </Box>
-        ) : (
-          statusVal && (
-            <Box
-              style={{
-                position: "absolute",
-                top: 12,
-                left: 12,
-                backgroundColor: currentStatusStyle.bg,
-                color: currentStatusStyle.text,
-                padding: "4px 12px",
-                borderRadius: 999,
-                fontSize: "11px",
-                fontWeight: 800,
-                textTransform: "uppercase",
-                letterSpacing: "0.5px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
-                zIndex: 2,
-              }}
-            >
-              {statusVal}
-            </Box>
-          )
+        {locationName && (
+          <Text size="xs" c="dimmed" mt="xs">
+            {locationName}
+          </Text>
         )}
+      </Modal>
 
-        {/* Category Badge */}
-        <Box
-          style={{
-            position: "absolute",
-            top: 12,
-            right: 12,
-            backgroundColor: "rgba(0, 57, 83, 0.88)",
-            color: "#ffffff",
-            backdropFilter: "blur(4px)",
-            padding: "4px 12px",
-            borderRadius: 999,
-            fontSize: "11px",
-            fontWeight: 800,
-            textTransform: "uppercase",
-            letterSpacing: "0.5px",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-            zIndex: 2,
-          }}
-        >
-          {category || "GENERAL"}
-        </Box>
+      <Card
+        shadow="xs"
+        padding={0}
+        radius="lg"
+        withBorder
+        style={{
+          backgroundColor: "#ffffff",
+          borderColor: "#E5ECEE",
+          overflow: "hidden",
+          transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "translateY(-4px)";
+          e.currentTarget.style.boxShadow = "0 12px 24px rgba(0, 57, 83, 0.1)";
+          e.currentTarget.style.borderColor = "#027F8D";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "translateY(0)";
+          e.currentTarget.style.boxShadow = "";
+          e.currentTarget.style.borderColor = "#E5ECEE";
+        }}
+      >
+        {/* Image Container with Overlay Pills */}
+        <Card.Section style={{ position: "relative", overflow: "hidden" }}>
+          <Image
+            src={image}
+            height={190}
+            alt={category || "Incident"}
+            fallbackSrc="https://placehold.co/600x340/003953/FFFFFF?text=CordiLink+Incident"
+            onClick={() => setImagePreview(true)}
+            style={{
+              transition: "transform 0.3s ease",
+              cursor: "zoom-in",
+            }}
+          />
 
-        {/* Highlight Pill */}
-        <Box
-          style={{
-            position: "absolute",
-            bottom: 12,
-            left: 12,
-            backgroundColor: "#027F8D",
-            color: "#ffffff",
-            padding: "5px 12px",
-            borderRadius: "8px",
-            fontSize: "12px",
-            fontWeight: 800,
-            boxShadow: "0 4px 10px rgba(0,0,0,0.25)",
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            zIndex: 2,
-          }}
-        >
-          <svg
-            width="13"
-            height="13"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#fff"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
+          {/* Status Badge (skeleton while the incident status is being fetched) */}
+          {loading ? (
+            <Box style={{ position: "absolute", top: 12, left: 12, zIndex: 2 }}>
+              <Skeleton width={76} height={24} radius={999} />
+            </Box>
+          ) : (
+            statusVal && (
+              <Box
+                style={{
+                  position: "absolute",
+                  top: 12,
+                  left: 12,
+                  backgroundColor: currentStatusStyle.bg,
+                  color: currentStatusStyle.text,
+                  padding: "4px 12px",
+                  borderRadius: 999,
+                  fontSize: "11px",
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+                  zIndex: 2,
+                }}
+              >
+                {statusVal}
+              </Box>
+            )
+          )}
+
+          {/* Category Badge */}
+          <Box
+            style={{
+              position: "absolute",
+              top: 12,
+              right: 12,
+              backgroundColor: "rgba(0, 57, 83, 0.88)",
+              color: "#ffffff",
+              backdropFilter: "blur(4px)",
+              padding: "4px 12px",
+              borderRadius: 999,
+              fontSize: "11px",
+              fontWeight: 800,
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+              zIndex: 2,
+            }}
           >
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          </svg>
-          <span>ID #{id}</span>
-          {isIncident && <span>• {score} pts</span>}
-        </Box>
+            {category || "GENERAL"}
+          </Box>
 
-        {/* Connected Incident Floating Button */}
-        {connectedIncidentId && (
-          <ActionIcon
-            variant="default"
-            radius="xl"
-            size="md"
+          {/* Highlight Pill */}
+          <Box
             style={{
               position: "absolute",
               bottom: 12,
-              right: 12,
-              backgroundColor: "#ffffff",
-              boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+              left: 12,
+              backgroundColor: "#027F8D",
+              color: "#ffffff",
+              padding: "5px 12px",
+              borderRadius: "8px",
+              fontSize: "12px",
+              fontWeight: 800,
+              boxShadow: "0 4px 10px rgba(0,0,0,0.25)",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
               zIndex: 2,
-              border: "none",
             }}
-            onClick={() => checkIncidentId?.(connectedIncidentId)}
-            title={`View Incident #${connectedIncidentId}`}
           >
             <svg
-              width="14"
-              height="14"
+              width="13"
+              height="13"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#027F8D"
+              stroke="#fff"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden="true"
             >
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
-          </ActionIcon>
-        )}
-      </Card.Section>
+            <span>ID #{id}</span>
+            {isIncident && <span>• {score} pts</span>}
+          </Box>
 
-      {/* Content Area */}
-      <Stack p="md" gap="xs">
-        {/* Location Row */}
-        <Group gap={6} align="center">
-          <svg
-            width="13"
-            height="13"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#718096"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-            <circle cx="12" cy="10" r="3" />
-          </svg>
-          <Text size="xs" fw={700} c="gray.6">
-            {locationName || "Cordillera Administrative Region"}
-          </Text>
-        </Group>
+          {/* Connected Incident Floating Button */}
+          {connectedIncidentId && (
+            <ActionIcon
+              variant="default"
+              radius="xl"
+              size="md"
+              style={{
+                position: "absolute",
+                bottom: 12,
+                right: 12,
+                backgroundColor: "#ffffff",
+                boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+                zIndex: 2,
+                border: "none",
+              }}
+              onClick={() => checkIncidentId?.(connectedIncidentId)}
+              title={`View Incident #${connectedIncidentId}`}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#027F8D"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+            </ActionIcon>
+          )}
+        </Card.Section>
 
-        {/* Title */}
-        <Text fw={800} size="md" c="#003953" lh={1.25} lineClamp={1}>
-          {displayTitle}
-        </Text>
-
-        {/* Description */}
-        <Text size="xs" c="dimmed" lineClamp={2} lh={1.4}>
-          {description}
-        </Text>
-
-        {/* Meta Row */}
-        <Group justify="space-between" align="center" pt={4}>
+        {/* Content Area */}
+        <Stack p="md" gap="xs">
+          {/* Location Row */}
           <Group gap={6} align="center">
-            {isCommunity && (
-              <>
-                <Avatar size="xs" radius="xl" color="teal">
-                  {category ? category.charAt(0).toUpperCase() : "C"}
-                </Avatar>
-                <Text size="11px" fw={600} c="gray.7">
-                  Community Report
-                </Text>
-              </>
-            )}
-          </Group>
-          <Group gap={4} align="center">
             <svg
-              width="12"
-              height="12"
+              width="13"
+              height="13"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#A0AEC0"
-              strokeWidth="2"
+              stroke="#718096"
+              strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden="true"
             >
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-              <line x1="16" y1="2" x2="16" y2="6" />
-              <line x1="8" y1="2" x2="8" y2="6" />
-              <line x1="3" y1="10" x2="21" y2="10" />
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+              <circle cx="12" cy="10" r="3" />
             </svg>
-            <Text size="11px" fw={500} c="gray.5">
-              {formattedDate}
+            <Text size="xs" fw={700} c="gray.6">
+              {locationName || "Cordillera Administrative Region"}
             </Text>
           </Group>
-        </Group>
 
-        {/* Admin Status Changer */}
-        {onChangeStatus && (
-          <Select
-            mt="xs"
-            size="xs"
-            radius="md"
-            label="Admin: Update Status"
-            value={statusVal}
-            onChange={(val) => {
-              if (!val) return;
-              setStatusVal(val);
-              onChangeStatus(val);
-            }}
-            data={[
-              { value: "pending", label: "Pending" },
-              { value: "in-progress", label: "In Progress" },
-              { value: "resolved", label: "Resolved" },
-            ]}
-          />
-        )}
+          {/* Title */}
+          <Text fw={800} size="md" c="#003953" lh={1.25} lineClamp={1}>
+            {displayTitle}
+          </Text>
 
-        {/* Footer Actions */}
-        {renderFooterActions()}
-      </Stack>
-    </Card>
+          {/* Description */}
+          <Text size="xs" c="dimmed" lineClamp={2} lh={1.4}>
+            {description}
+          </Text>
+
+          {/* Meta Row */}
+          <Group justify="space-between" align="center" pt={4}>
+            <Group gap={6} align="center">
+              {isCommunity && (
+                <>
+                  <Avatar size="xs" radius="xl" color="teal">
+                    {category ? category.charAt(0).toUpperCase() : "C"}
+                  </Avatar>
+                  <Text size="11px" fw={600} c="gray.7">
+                    Community Report
+                  </Text>
+                </>
+              )}
+            </Group>
+            <Group gap={4} align="center">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#A0AEC0"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+              <Text size="11px" fw={500} c="gray.5">
+                {formattedDate}
+              </Text>
+            </Group>
+          </Group>
+
+          {/* Admin Status Changer */}
+          {onChangeStatus && (
+            <Select
+              mt="xs"
+              size="xs"
+              radius="md"
+              label="Admin: Update Status"
+              value={statusVal}
+              onChange={(val) => {
+                if (!val) return;
+                setStatusVal(val);
+                onChangeStatus(val);
+              }}
+              data={[
+                { value: "pending", label: "Pending" },
+                { value: "in-progress", label: "In Progress" },
+                { value: "resolved", label: "Resolved" },
+              ]}
+            />
+          )}
+
+          {/* Footer Actions */}
+          {renderFooterActions()}
+        </Stack>
+      </Card>
+    </>
   );
 }

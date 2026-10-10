@@ -10,14 +10,14 @@ const corsHeaders = {
 };
 
 const CATEGORIES = [
-  "Commuter Transport Shortages",
-  "Potholes and Rapid Asphalt Degradation",
-  "Clogged Storm Drain Inlets and Street Flash Flooding",
-  "Delayed Garbage Collection at Barangay Drop-off Points",
-  "Landslides Soil Erosion, and Rockfalls on Steep Slopes",
-  "Tangled Low-Hanging, and Abandoned Spaghetti Wires",
-  "Rotational Water Supply Schedules and Extended Dry Spells",
-  "Illegal Street Parking on Narrow Residential Street",
+  "Public Transport Shortage",
+  "Potholes and Road Degradation",
+  "Clogged Drains and Street Flooding",
+  "Delayed Garbage Collection",
+  "Landslides and Rockfalls",
+  "Tangled or Dangling Wires",
+  "Irregular Water Supply",
+  "Illegal Street Parking",
 ] as const;
 
 // Official"", active Google model name
