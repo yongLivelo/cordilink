@@ -14,6 +14,7 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import { Link, Navigate } from "react-router";
 import { useAuth } from "@/context/AuthContext";
+import FaqModal from "@/components/FaqModal";
 
 // CordiLink Branding Palette
 const BRAND = {
@@ -28,6 +29,10 @@ export default function Home() {
 
   // Emergency 911 Confirmation Modal disclosure
   const [emergencyModalOpened, { open: openEmergency, close: closeEmergency }] =
+    useDisclosure(false);
+
+  // FAQ Knowledge Hub Modal disclosure
+  const [faqModalOpened, { open: openFaq, close: closeFaq }] =
     useDisclosure(false);
 
   // Clean formatted user name (handles long email prefixes gracefully)
@@ -150,57 +155,85 @@ export default function Home() {
           boxShadow: "0 6px 20px rgba(0, 43, 63, 0.2)",
           position: "relative",
         }}
+        px={{ base: "md", md: "xl", lg: 36 }}
+        py={{ base: "xl", md: 36 }}
       >
-        <Container
-          size="xl"
-          px={{ base: "md", md: "xl" }}
-          py={{ base: "xl", md: 48 }}
-        >
-          <Stack gap="md" maw={900}>
-            {/* Top Date & Civic Badge Row */}
-            <Group justify="space-between" align="center" wrap="wrap">
-              <Group
-                gap={6}
-                style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.95)",
-                  padding: "4px 14px",
-                  borderRadius: 999,
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
-                }}
-              >
-                <Text size="xs" fw={800} c={BRAND.orange}>
-                  {formattedDate.datePart}
-                </Text>
-                <Text size="xs" fw={600} c="#4A5568">
-                  | {formattedDate.dayPart}
-                </Text>
-              </Group>
-            </Group>
-
-            {/* Greeting & Resident Title */}
-            <Box>
-              <Text size="sm" fw={500} c="rgba(255, 255, 255, 0.85)" mb={2}>
-                {ilocanoGreeting}
-              </Text>
-              <Title
-                order={1}
-                size="h1"
-                fw={900}
-                c="#ffffff"
-                lh={1.15}
-                style={{ letterSpacing: "-0.5px" }}
-              >
-                {displayName}
-              </Title>
-            </Box>
-
-            <Text size="sm" c="rgba(255, 255, 255, 0.88)" maw={640} lh={1.5}>
-              Welcome to CordiLink. Empowering Baguio City residents to report
-              non-emergency everyday concerns like damaged roads, fallen debris,
-              and public safety hazards directly to local authorities.
+        {/* Top Date & FAQ Row: Spans full width edge-to-edge, pushing FAQ button to the pinaka side */}
+        <Group justify="space-between" align="center" w="100%" wrap="wrap" gap="xs" mb="lg">
+          <Group
+            gap={6}
+            style={{
+              backgroundColor: "rgba(255, 255, 255, 0.95)",
+              padding: "4px 14px",
+              borderRadius: 999,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+            }}
+          >
+            <Text size="xs" fw={800} c={BRAND.orange}>
+              {formattedDate.datePart}
             </Text>
-          </Stack>
-        </Container>
+            <Text size="xs" fw={600} c="#4A5568">
+              | {formattedDate.dayPart}
+            </Text>
+          </Group>
+
+          {/* FAQ Knowledge Hub Button - pushed to the far right (pinaka side) */}
+          <Button
+            onClick={openFaq}
+            size="xs"
+            variant="white"
+            color={BRAND.navy}
+            radius="xl"
+            fw={800}
+            style={{
+              boxShadow: "0 2px 8px rgba(0,0,0,0.16)",
+              flexShrink: 0,
+            }}
+            leftSection={
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={BRAND.teal}
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            }
+          >
+            FAQs & Guide
+          </Button>
+        </Group>
+
+        {/* Greeting & Resident Title */}
+        <Stack gap="xs" maw={860}>
+          <Box>
+            <Text size="sm" fw={500} c="rgba(255, 255, 255, 0.85)" mb={2}>
+              {ilocanoGreeting}
+            </Text>
+            <Title
+              order={1}
+              size="h1"
+              fw={900}
+              c="#ffffff"
+              lh={1.15}
+              style={{ letterSpacing: "-0.5px", wordBreak: "break-word" }}
+            >
+              {displayName}
+            </Title>
+          </Box>
+
+          <Text size="sm" c="rgba(255, 255, 255, 0.88)" lh={1.5}>
+            Welcome to CordiLink. Empowering Baguio City residents to report
+            non-emergency everyday concerns like damaged roads, fallen debris,
+            and public safety hazards directly to local authorities.
+          </Text>
+        </Stack>
       </Box>
 
       {/* =========================================================================
@@ -395,19 +428,105 @@ export default function Home() {
               </Button>
             </Group>
           </Box>
+
+          {/* FAQ & CITIZEN KNOWLEDGE HUB CARD */}
+          <Card
+            withBorder
+            radius="lg"
+            p="md"
+            style={{
+              backgroundColor: "#ffffff",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+            onClick={openFaq}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow =
+                "0 6px 18px rgba(2, 127, 141, 0.12)";
+              e.currentTarget.style.borderColor = BRAND.teal;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "";
+              e.currentTarget.style.borderColor = "";
+            }}
+          >
+            <Group justify="space-between" align="center" wrap="wrap" gap="sm">
+              <Group gap="md" align="center" wrap="nowrap">
+                <Box
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 12,
+                    backgroundColor: "rgba(2, 127, 141, 0.12)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke={BRAND.teal}
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                </Box>
+                <Box>
+                  <Group gap="xs" mb={2}>
+                    <Text fw={800} size="sm" c={BRAND.navy}>
+                      Frequently Asked Questions (FAQ) & Citizen Guide
+                    </Text>
+                    <Badge size="xs" color="teal" variant="light">
+                      5 Languages
+                    </Badge>
+                  </Group>
+                  <Text size="xs" c="dimmed">
+                    Read in English, Tagalog / Filipino, Ilocano, Kankanaey, or
+                    Pangasinan. Learn how deduplication and AI routing work.
+                  </Text>
+                </Box>
+              </Group>
+
+              <Button
+                variant="light"
+                color="teal"
+                size="xs"
+                radius="md"
+                fw={700}
+                rightSection={
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                }
+              >
+                View FAQs
+              </Button>
+            </Group>
+          </Card>
         </Stack>
       </Container>
 
-      {/* =========================================================================
-          3. ACTIVE REPORTS SECTION (MODERN 3-COLUMN DESKTOP GRID)
-          ========================================================================= */}
-      <Container
-        size="xl"
-        px={{ base: "md", md: "xl" }}
-        py={{ base: "xl", md: 36 }}
-      >
-        {/* Section Header & Status Filters */}
-      </Container>
+      {/* MULTILINGUAL FAQ POPUP MODAL */}
+      <FaqModal opened={faqModalOpened} onClose={closeFaq} />
     </Box>
   );
 }

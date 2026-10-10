@@ -4,6 +4,7 @@ import {
   Center,
   Pagination,
   Text,
+  SimpleGrid,
 } from "@mantine/core";
 import { useEffect, useState, useMemo } from "react";
 import type { Incident } from "@/types/report";
@@ -13,7 +14,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/context/AuthContext";
 import "leaflet/dist/leaflet.css";
 
-const ITEMS_PER_PAGE = 2;
+const ITEMS_PER_PAGE = 6;
 
 export default function CommunityReportPage() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -133,10 +134,12 @@ export default function CommunityReportPage() {
           <Loader color="blue" />
         </Center>
       ) : paginatedReports.length > 0 ? (
-        <Stack mt="xs">
-          {paginatedReports.map((reportItem) => (
-            <ReportCard key={reportItem.id} report={reportItem} />
-          ))}
+        <Stack gap="lg" mt="xs">
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="lg">
+            {paginatedReports.map((reportItem) => (
+              <ReportCard key={reportItem.id} report={reportItem} />
+            ))}
+          </SimpleGrid>
 
           {totalPages > 1 && (
             <Center mt="xl">
@@ -144,6 +147,8 @@ export default function CommunityReportPage() {
                 value={currentPage}
                 onChange={setCurrentPage}
                 total={totalPages}
+                color="teal"
+                radius="md"
               />
             </Center>
           )}

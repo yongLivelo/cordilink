@@ -8,6 +8,7 @@ import {
   Modal,
   useModalsStack,
   Button,
+  SimpleGrid,
 } from "@mantine/core";
 import { useEffect, useState, useMemo } from "react";
 import type { Incident, Report } from "@/types/report";
@@ -17,7 +18,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { notifications } from "@mantine/notifications";
 
-const ITEMS_PER_PAGE = 2;
+const ITEMS_PER_PAGE = 6;
 
 export default function MyReports() {
   const { session } = useAuth();
@@ -248,18 +249,20 @@ export default function MyReports() {
           <Loader color="blue" />
         </Center>
       ) : paginatedReports.length > 0 ? (
-        <Stack mt="md">
-          {paginatedReports.map((reportItem) => (
-            <ReportCard
-              key={reportItem.id}
-              report={reportItem}
-              onDelete={() => {
-                setReportToDelete(reportItem);
-                stack.open("delete");
-              }}
-              checkIncidentId={checkIncidentId}
-            />
-          ))}
+        <Stack gap="lg" mt="md">
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="lg">
+            {paginatedReports.map((reportItem) => (
+              <ReportCard
+                key={reportItem.id}
+                report={reportItem}
+                onDelete={() => {
+                  setReportToDelete(reportItem);
+                  stack.open("delete");
+                }}
+                checkIncidentId={checkIncidentId}
+              />
+            ))}
+          </SimpleGrid>
 
           {incident && (
             <Modal
@@ -277,6 +280,8 @@ export default function MyReports() {
                 value={currentPage}
                 onChange={setCurrentPage}
                 total={totalPages}
+                color="teal"
+                radius="md"
               />
             </Center>
           )}
