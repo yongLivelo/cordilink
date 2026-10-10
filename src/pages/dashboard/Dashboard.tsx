@@ -238,8 +238,17 @@ export default function Dashboard() {
         px={{ base: "md", md: "xl", lg: 36 }}
         py={{ base: "xl", md: 36 }}
       >
-        <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
-          <Box maw={740}>
+        <Group
+          justify="space-between"
+          align="flex-start"
+          wrap="wrap"
+          gap="lg"
+        >
+          <Box
+            style={{ flex: "1 1 300px" }}
+            maw={{ base: "100%", lg: 740 }}
+            w={{ base: "100%", md: "auto" }}
+          >
             <Group gap="xs" mb={8}>
               <Badge
                 size="sm"
@@ -263,8 +272,11 @@ export default function Dashboard() {
               size="h1"
               fw={900}
               c="#ffffff"
-              lh={1.15}
-              style={{ letterSpacing: "-0.5px" }}
+              lh={1.2}
+              style={{
+                fontSize: "clamp(1.5rem, 3.5vw, 2.2rem)",
+                letterSpacing: "-0.5px",
+              }}
             >
               Central Incident Dispatch Portal
             </Title>
@@ -275,26 +287,30 @@ export default function Dashboard() {
             </Text>
           </Box>
 
-          {/* Admin Info & High-Contrast Live Sync Chip */}
+          {/* Admin Info & High-Contrast Live Sync Chip (Enlarged & Full Span on Mobile) */}
           <Box
+            w={{ base: "100%", md: "auto" }}
+            p={{ base: "md", sm: "lg" }}
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.12)",
-              padding: "12px 18px",
-              borderRadius: "14px",
-              backdropFilter: "blur(6px)",
+              backgroundColor: "rgba(255, 255, 255, 0.14)",
+              border: "1px solid rgba(255, 255, 255, 0.22)",
+              borderRadius: "16px",
+              backdropFilter: "blur(8px)",
+              boxShadow: "0 4px 18px rgba(0, 0, 0, 0.14)",
             }}
           >
-            <Group justify="space-between" align="center" gap="md" mb={4}>
+            <Group justify="space-between" align="center" gap="md" wrap="nowrap" mb={10}>
               <Box>
                 <Text
-                  size="11px"
+                  size="xs"
                   fw={700}
-                  c="rgba(255,255,255,0.75)"
+                  c="rgba(255,255,255,0.8)"
                   tt="uppercase"
+                  style={{ letterSpacing: "0.5px" }}
                 >
                   Logged in as
                 </Text>
-                <Text size="sm" fw={800} c="#ffffff">
+                <Text size="md" fw={900} c="#ffffff">
                   LGU Operations Admin
                 </Text>
               </Box>
@@ -303,45 +319,62 @@ export default function Dashboard() {
                 variant="white"
                 color="red"
                 radius="md"
-                fw={700}
+                fw={800}
+                px="sm"
                 onClick={openLogout}
+                styles={{
+                  root: {
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+                  },
+                }}
               >
                 Log Out
               </Button>
             </Group>
 
             {/* High-Contrast "● Live Database Sync" Chip */}
-            <Box
+            <Group
+              justify="space-between"
+              align="center"
+              gap="xs"
               mt={8}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                backgroundColor: "#ffffff",
-                padding: "5px 14px",
-                borderRadius: "999px",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.18)",
-              }}
+              wrap="wrap"
             >
-              <span
+              <Box
                 style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  backgroundColor: "#10B981",
-                  boxShadow: "0 0 6px #10B981",
-                  display: "inline-block",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  backgroundColor: "#ffffff",
+                  padding: "6px 14px",
+                  borderRadius: "999px",
+                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.18)",
                 }}
-              />
-              <Text
-                size="xs"
-                fw={800}
-                c={BRAND.navy}
-                style={{ letterSpacing: "0.4px" }}
               >
-                Live Database Sync
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    backgroundColor: "#10B981",
+                    boxShadow: "0 0 6px #10B981",
+                    display: "inline-block",
+                  }}
+                />
+                <Text
+                  size="xs"
+                  fw={800}
+                  c={BRAND.navy}
+                  style={{ letterSpacing: "0.4px" }}
+                >
+                  Live Database Sync
+                </Text>
+              </Box>
+
+              <Text size="11px" fw={600} c="rgba(255, 255, 255, 0.85)">
+                Real-Time Telemetry
               </Text>
-            </Box>
+            </Group>
           </Box>
         </Group>
       </Box>
@@ -355,25 +388,32 @@ export default function Dashboard() {
         pb="xl"
         style={{ width: "100%" }}
       >
-        <SimpleGrid cols={{ base: 2, md: 4 }} spacing="md">
+        <SimpleGrid cols={{ base: 2, md: 4 }} spacing={{ base: "sm", md: "md" }}>
           {/* Metric 1: Total Incidents */}
           <Card
             shadow="sm"
             radius="lg"
-            p="md"
+            p={{ base: "sm", sm: "md" }}
             style={{
               backgroundColor: "#ffffff",
               boxShadow: "0 2px 10px rgba(0, 57, 83, 0.05)",
             }}
           >
-            <Text size="xs" fw={700} c="gray.6" tt="uppercase">
+            <Text size="xs" fw={700} c="gray.6" tt="uppercase" lineClamp={1}>
               Total Incidents Logged
             </Text>
-            <Title order={2} size="h1" fw={900} c={BRAND.navy} mt={4}>
+            <Title
+              order={2}
+              size="h1"
+              fw={900}
+              c={BRAND.navy}
+              mt={4}
+              style={{ fontSize: "clamp(1.5rem, 2.5vw, 2rem)" }}
+            >
               {metrics.total}
             </Title>
-            <Text size="11px" c="dimmed">
-              Across all Baguio City barangays
+            <Text size="11px" c="dimmed" lineClamp={1}>
+              Across all Baguio barangays
             </Text>
           </Card>
 
@@ -381,25 +421,38 @@ export default function Dashboard() {
           <Card
             shadow="sm"
             radius="lg"
-            p="md"
+            p={{ base: "sm", sm: "md" }}
             style={{
               backgroundColor: "#FFF8F5",
               boxShadow: "0 2px 10px rgba(255, 57, 0, 0.06)",
             }}
           >
-            <Group justify="space-between" align="center">
-              <Text size="xs" fw={700} c={BRAND.orange} tt="uppercase">
+            <Group justify="space-between" align="center" wrap="nowrap">
+              <Text
+                size="xs"
+                fw={700}
+                c={BRAND.orange}
+                tt="uppercase"
+                lineClamp={1}
+              >
                 Pending Triage
               </Text>
               <Badge color="orange" size="xs">
                 Urgent
               </Badge>
             </Group>
-            <Title order={2} size="h1" fw={900} c={BRAND.orange} mt={4}>
+            <Title
+              order={2}
+              size="h1"
+              fw={900}
+              c={BRAND.orange}
+              mt={4}
+              style={{ fontSize: "clamp(1.5rem, 2.5vw, 2rem)" }}
+            >
               {metrics.pending}
             </Title>
-            <Text size="11px" c="dimmed">
-              Awaiting review & crew dispatch
+            <Text size="11px" c="dimmed" lineClamp={1}>
+              Awaiting review & dispatch
             </Text>
           </Card>
 
@@ -407,25 +460,38 @@ export default function Dashboard() {
           <Card
             shadow="sm"
             radius="lg"
-            p="md"
+            p={{ base: "sm", sm: "md" }}
             style={{
               backgroundColor: "#F2F9F9",
               boxShadow: "0 2px 10px rgba(2, 127, 141, 0.06)",
             }}
           >
-            <Group justify="space-between" align="center">
-              <Text size="xs" fw={700} c={BRAND.teal} tt="uppercase">
+            <Group justify="space-between" align="center" wrap="nowrap">
+              <Text
+                size="xs"
+                fw={700}
+                c={BRAND.teal}
+                tt="uppercase"
+                lineClamp={1}
+              >
                 In Progress
               </Text>
               <Badge color="teal" size="xs">
                 Active
               </Badge>
             </Group>
-            <Title order={2} size="h1" fw={900} c={BRAND.teal} mt={4}>
+            <Title
+              order={2}
+              size="h1"
+              fw={900}
+              c={BRAND.teal}
+              mt={4}
+              style={{ fontSize: "clamp(1.5rem, 2.5vw, 2rem)" }}
+            >
               {metrics.inProgress}
             </Title>
-            <Text size="11px" c="dimmed">
-              Field teams actively working on site
+            <Text size="11px" c="dimmed" lineClamp={1}>
+              Field teams on site
             </Text>
           </Card>
 
@@ -433,25 +499,32 @@ export default function Dashboard() {
           <Card
             shadow="sm"
             radius="lg"
-            p="md"
+            p={{ base: "sm", sm: "md" }}
             style={{
               backgroundColor: "#F2F9F4",
               boxShadow: "0 2px 10px rgba(43, 138, 62, 0.06)",
             }}
           >
-            <Group justify="space-between" align="center">
-              <Text size="xs" fw={700} c="green.8" tt="uppercase">
+            <Group justify="space-between" align="center" wrap="nowrap">
+              <Text size="xs" fw={700} c="green.8" tt="uppercase" lineClamp={1}>
                 Resolved
               </Text>
               <Badge color="green" size="xs">
                 Closed
               </Badge>
             </Group>
-            <Title order={2} size="h1" fw={900} c="green.8" mt={4}>
+            <Title
+              order={2}
+              size="h1"
+              fw={900}
+              c="green.8"
+              mt={4}
+              style={{ fontSize: "clamp(1.5rem, 2.5vw, 2rem)" }}
+            >
               {metrics.resolved}
             </Title>
-            <Text size="11px" c="dimmed">
-              Successfully addressed & cleared
+            <Text size="11px" c="dimmed" lineClamp={1}>
+              Successfully addressed
             </Text>
           </Card>
         </SimpleGrid>

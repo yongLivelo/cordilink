@@ -28,7 +28,7 @@ export default function Layout() {
       </AppShell.Navbar>
 
       {/* 📄 Page Content */}
-      <AppShell.Main pb={{ base: 80, sm: 30 }}>
+      <AppShell.Main pb={{ base: isFullSpan ? 24 : 80, sm: 30 }}>
         {isFullSpan ? (
           <Outlet />
         ) : (

@@ -71,7 +71,7 @@ export default function ReportsToolbar({
   return (
     <>
       {/* Primary Styled Search Bar */}
-      <Box mt="xs" maw={640}>
+      <Box mt="xs" w="100%" maw={640}>
         <TextInput
           placeholder={searchPlaceholder}
           value={searchQuery}
@@ -154,7 +154,7 @@ export default function ReportsToolbar({
       </Group>
 
       {/* Header, Status Pills, and Sort By Controls */}
-      <Group justify="space-between" align="center" wrap="wrap" gap="md">
+      <Group justify="space-between" align="center" wrap="wrap" gap="md" w="100%">
         {title && (
           <Box>
             <Title
@@ -175,7 +175,13 @@ export default function ReportsToolbar({
           </Box>
         )}
 
-        <Group gap="md" align="center" wrap="wrap">
+        <Group
+          gap="md"
+          align="center"
+          wrap="wrap"
+          w={{ base: "100%", md: "auto" }}
+          justify="space-between"
+        >
           {/* Status Tab Filter */}
           <Group gap={6} role="tablist" aria-label="Status filter">
             {statusTabs.map((tab) => {
@@ -209,7 +215,7 @@ export default function ReportsToolbar({
             data={SORT_OPTIONS}
             value={sortOrder}
             onChange={onSortChange}
-            w={140}
+            w={{ base: "100%", xs: 140 }}
             size="xs"
             radius="md"
             allowDeselect={false}
