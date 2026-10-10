@@ -22,7 +22,8 @@ export default function BottomNav() {
     <Paper
       hiddenFrom="sm" // Only visible on mobile 📱
       shadow="lg"
-      p="xs"
+      px="xs"
+      pt="xs"
       style={{
         position: "fixed",
         bottom: 0,
@@ -31,6 +32,7 @@ export default function BottomNav() {
         zIndex: 1000,
         borderTop: "1px solid #EDEDED",
         backgroundColor: "#ffffff",
+        paddingBottom: "calc(8px + env(safe-area-inset-bottom, 0px))",
       }}
     >
       <Group justify="space-around" align="center">

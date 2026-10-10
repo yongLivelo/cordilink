@@ -2,10 +2,13 @@ import Navbar from "@/layout/components/navbar";
 import NavbarMobile from "@/layout/components/navbar-mobile/NavbarMobile";
 import { AppShell, Box } from "@mantine/core";
 import { Outlet, useLocation } from "react-router";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Layout() {
   const location = useLocation();
+  const { role } = useAuth();
   const isFullSpan = location.pathname === "/" || location.pathname === "/dashboard";
+  const isMobileNavVisible = role !== "admin";
 
   return (
     <AppShell
@@ -28,7 +31,16 @@ export default function Layout() {
       </AppShell.Navbar>
 
       {/* 📄 Page Content */}
-      <AppShell.Main pb={{ base: isFullSpan ? 24 : 80, sm: 30 }}>
+      <AppShell.Main
+        pb={{
+          base: isMobileNavVisible
+            ? "calc(96px + env(safe-area-inset-bottom, 0px))"
+            : isFullSpan
+            ? 24
+            : 30,
+          sm: 30,
+        }}
+      >
         {isFullSpan ? (
           <Outlet />
         ) : (
