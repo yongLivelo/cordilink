@@ -66,7 +66,7 @@ export default function Home() {
     return () => {
       window.removeEventListener(
         "cordilink_profile_updated",
-        handleProfileUpdate
+        handleProfileUpdate,
       );
     };
   }, []);
@@ -76,9 +76,7 @@ export default function Home() {
     if (customName && customName.trim()) {
       return customName.trim().toUpperCase();
     }
-    const meta =
-      session?.user?.user_metadata?.full_name ||
-      session?.user?.user_metadata?.name;
+    const meta = session?.user?.user_metadata?.name;
     if (meta && typeof meta === "string" && meta.trim()) {
       return meta.trim().toUpperCase();
     }
@@ -204,7 +202,14 @@ export default function Home() {
         py={{ base: "xl", md: 36 }}
       >
         {/* Top Date & FAQ Row: Spans full width edge-to-edge, pushing FAQ button to the pinaka side */}
-        <Group justify="space-between" align="center" w="100%" wrap="wrap" gap="xs" mb="lg">
+        <Group
+          justify="space-between"
+          align="center"
+          w="100%"
+          wrap="wrap"
+          gap="xs"
+          mb="lg"
+        >
           <Group
             gap={6}
             style={{

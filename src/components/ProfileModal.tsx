@@ -38,7 +38,6 @@ export default function ProfileModal({ opened, onClose }: ProfileModalProps) {
   useEffect(() => {
     if (opened) {
       const existingName =
-        session?.user?.user_metadata?.full_name ||
         session?.user?.user_metadata?.name ||
         localStorage.getItem("cordilink_custom_name") ||
         (session?.user?.email ? session.user.email.split("@")[0] : "");
@@ -50,10 +49,6 @@ export default function ProfileModal({ opened, onClose }: ProfileModalProps) {
 
   const handleSaveName = async () => {
     const trimmed = displayName.trim();
-    if (trimmed.length < 2) {
-      setError("Please enter a name with at least 2 characters.");
-      return;
-    }
     if (trimmed.length > 50) {
       setError("Name cannot exceed 50 characters.");
       return;
@@ -66,7 +61,6 @@ export default function ProfileModal({ opened, onClose }: ProfileModalProps) {
       // 1. Update Supabase Auth user metadata
       const { error: updateError } = await supabase.auth.updateUser({
         data: {
-          full_name: trimmed,
           name: trimmed,
         },
       });
@@ -82,7 +76,7 @@ export default function ProfileModal({ opened, onClose }: ProfileModalProps) {
       window.dispatchEvent(
         new CustomEvent("cordilink_profile_updated", {
           detail: { name: trimmed },
-        })
+        }),
       );
 
       // 4. Show success toast notification
@@ -184,7 +178,9 @@ export default function ProfileModal({ opened, onClose }: ProfileModalProps) {
               variant="light"
               mt={4}
             >
-              {role === "admin" ? "LGU Operations Admin" : "Verified Baguio Citizen"}
+              {role === "admin"
+                ? "LGU Operations Admin"
+                : "Verified Baguio Citizen"}
             </Badge>
           </Box>
         </Group>

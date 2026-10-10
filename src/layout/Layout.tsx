@@ -7,8 +7,16 @@ import { useAuth } from "@/context/AuthContext";
 export default function Layout() {
   const location = useLocation();
   const { role } = useAuth();
-  const isFullSpan = location.pathname === "/" || location.pathname === "/dashboard";
+  const isFullSpan =
+    location.pathname === "/" || location.pathname === "/dashboard";
   const isMobileNavVisible = role !== "admin";
+
+  // Reserve bottom clearance on mobile when bottom navbar is active
+  const mobileBottomPadding = isMobileNavVisible
+    ? "calc(96px + env(safe-area-inset-bottom, 0px))"
+    : isFullSpan
+      ? 24
+      : 30;
 
   return (
     <AppShell
@@ -31,16 +39,7 @@ export default function Layout() {
       </AppShell.Navbar>
 
       {/* 📄 Page Content */}
-      <AppShell.Main
-        pb={{
-          base: isMobileNavVisible
-            ? "calc(96px + env(safe-area-inset-bottom, 0px))"
-            : isFullSpan
-            ? 24
-            : 30,
-          sm: 30,
-        }}
-      >
+      <AppShell.Main pb={{ base: mobileBottomPadding, sm: 30 }}>
         {isFullSpan ? (
           <Outlet />
         ) : (

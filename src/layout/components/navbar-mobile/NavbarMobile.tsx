@@ -1,11 +1,6 @@
 import { useAuth } from "@/context/AuthContext";
 import ProfileModal from "@/components/ProfileModal";
-import {
-  Paper,
-  Group,
-  UnstyledButton,
-  Text,
-} from "@mantine/core";
+import { Paper, Group, UnstyledButton, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Link, useLocation } from "react-router";
 
@@ -32,7 +27,6 @@ export default function BottomNav() {
         zIndex: 1000,
         borderTop: "1px solid #EDEDED",
         backgroundColor: "#ffffff",
-        paddingBottom: "calc(8px + env(safe-area-inset-bottom, 0px))",
       }}
     >
       <Group justify="space-around" align="center">
@@ -199,11 +193,7 @@ export default function BottomNav() {
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
             <circle cx="12" cy="7" r="4" />
           </svg>
-          <Text
-            size="xs"
-            fw={opened ? 700 : 500}
-            mt={2}
-          >
+          <Text size="xs" fw={opened ? 700 : 500} mt={2}>
             Profile
           </Text>
         </UnstyledButton>
