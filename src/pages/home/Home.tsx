@@ -222,7 +222,11 @@ export default function Home() {
               fw={900}
               c="#ffffff"
               lh={1.15}
-              style={{ letterSpacing: "-0.5px", wordBreak: "break-word" }}
+              style={{
+                fontSize: "clamp(1.5rem, 4vw, 2.25rem)",
+                letterSpacing: "-0.5px",
+                wordBreak: "break-word",
+              }}
             >
               {displayName}
             </Title>
@@ -276,8 +280,8 @@ export default function Home() {
               <Group
                 gap="lg"
                 align="center"
-                wrap="nowrap"
-                style={{ flex: 1, minWidth: 280 }}
+                wrap="wrap"
+                style={{ flex: "1 1 240px", minWidth: 0 }}
               >
                 {/* Elevated Action Icon */}
                 <Box
@@ -311,8 +315,8 @@ export default function Home() {
                 </Box>
 
                 {/* Content with Badges and Clear Text */}
-                <Box style={{ flex: 1 }}>
-                  <Group gap="xs" mb={6}>
+                <Box style={{ flex: 1, minWidth: 200 }}>
+                  <Group gap="xs" mb={6} wrap="wrap">
                     <Badge color="orange" variant="filled" size="sm" fw={800}>
                       PRIMARY CITIZEN ACTION
                     </Badge>
@@ -339,6 +343,7 @@ export default function Home() {
                 color={BRAND.orange}
                 radius="md"
                 fw={800}
+                w={{ base: "100%", sm: "auto" }}
                 style={{
                   boxShadow: "0 4px 14px rgba(255, 57, 0, 0.35)",
                 }}
@@ -452,8 +457,13 @@ export default function Home() {
               e.currentTarget.style.borderColor = "";
             }}
           >
-            <Group justify="space-between" align="center" wrap="wrap" gap="sm">
-              <Group gap="md" align="center" wrap="nowrap">
+            <Group justify="space-between" align="center" wrap="wrap" gap="md">
+              <Group
+                gap="md"
+                align="center"
+                wrap="wrap"
+                style={{ flex: "1 1 240px", minWidth: 0 }}
+              >
                 <Box
                   style={{
                     width: 44,
@@ -481,8 +491,8 @@ export default function Home() {
                     <line x1="12" y1="17" x2="12.01" y2="17" />
                   </svg>
                 </Box>
-                <Box>
-                  <Group gap="xs" mb={2}>
+                <Box style={{ flex: 1, minWidth: 200 }}>
+                  <Group gap="xs" mb={2} wrap="wrap">
                     <Text fw={800} size="sm" c={BRAND.navy}>
                       Frequently Asked Questions (FAQ) & Citizen Guide
                     </Text>
@@ -503,6 +513,7 @@ export default function Home() {
                 size="xs"
                 radius="md"
                 fw={700}
+                w={{ base: "100%", sm: "auto" }}
                 rightSection={
                   <svg
                     width="14"
