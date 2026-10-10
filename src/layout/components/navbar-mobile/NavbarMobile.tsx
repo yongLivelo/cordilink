@@ -1,30 +1,23 @@
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/lib/supabaseClient";
+import ProfileModal from "@/components/ProfileModal";
 import {
   Paper,
   Group,
-  Stack,
   UnstyledButton,
   Text,
-  Modal,
-  Button,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Link, useLocation } from "react-router";
 
 export default function BottomNav() {
   const location = useLocation();
-  const { role, session } = useAuth();
+  const { role } = useAuth();
   const BRAND_ORANGE = "#FF3900";
   const [opened, { open, close }] = useDisclosure();
   // For Admin accounts: only the Dashboard is displayed on screen — no citizen tabs
   if (role === "admin") {
     return null;
   }
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
   return (
     <Paper
       hiddenFrom="sm" // Only visible on mobile 📱
@@ -180,13 +173,14 @@ export default function BottomNav() {
           </Text>
         </UnstyledButton>
 
+        {/* 5. USER PROFILE BUTTON */}
         <UnstyledButton
           onClick={open}
           style={{
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            color: location.pathname === "/user" ? BRAND_ORANGE : "#888",
+            color: opened ? BRAND_ORANGE : "#888",
           }}
         >
           <svg
@@ -194,56 +188,27 @@ export default function BottomNav() {
             height="22"
             viewBox="0 0 24 24"
             fill="none"
-            stroke={location.pathname === "/user" ? BRAND_ORANGE : "#888"}
+            stroke={opened ? BRAND_ORANGE : "#888"}
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            aria-hidden="true"
           >
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            <line x1="12" y1="8" x2="12" y2="14" />
-            <line x1="9" y1="11" x2="15" y2="11" />
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
           </svg>
           <Text
             size="xs"
-            fw={location.pathname === "/my-reports" ? 700 : 500}
+            fw={opened ? 700 : 500}
             mt={2}
           >
-            User
+            Profile
           </Text>
         </UnstyledButton>
       </Group>
 
-      {/* Rendered outside the UnstyledButton so portal clicks don't bubble up to `open` */}
-      <Modal
-        opened={opened}
-        onClose={close}
-        closeOnClickOutside
-        title="Account"
-        centered
-        radius="md"
-      >
-        <Stack gap={2}>
-          <Text size="xs" c="dimmed">
-            Signed in as
-          </Text>
-          <Text size="sm" fw={600} style={{ wordBreak: "break-all" }}>
-            {session?.user.email}
-          </Text>
-        </Stack>
-        <Button
-          color="red"
-          variant="light"
-          fullWidth
-          radius="md"
-          mt="lg"
-          onClick={() => {
-            handleLogout();
-            close();
-          }}
-        >
-          Logout
-        </Button>
-      </Modal>
+      {/* Citizen Profile & Personalization Modal */}
+      <ProfileModal opened={opened} onClose={close} />
     </Paper>
   );
 }

@@ -1,5 +1,6 @@
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
+import ProfileModal from "@/components/ProfileModal";
 import {
   Button,
   Stack,
@@ -13,7 +14,7 @@ import {
   UnstyledButton,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router";
 
 // Brand Color Palette
@@ -31,7 +32,33 @@ export default function Navbar({
   const location = useLocation();
   const [loading, setLoading] = useState<boolean>(false);
   const [logoutModalOpened, { open: openLogout, close: closeLogout }] = useDisclosure(false);
+  const [profileModalOpened, { open: openProfile, close: closeProfile }] = useDisclosure(false);
   const { session, role } = useAuth();
+
+  const [customName, setCustomName] = useState<string>(() => {
+    return (
+      session?.user?.user_metadata?.full_name ||
+      session?.user?.user_metadata?.name ||
+      localStorage.getItem("cordilink_custom_name") ||
+      ""
+    );
+  });
+
+  useEffect(() => {
+    const handleProfileUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<{ name: string }>;
+      if (customEvent.detail?.name) {
+        setCustomName(customEvent.detail.name);
+      } else {
+        const stored = localStorage.getItem("cordilink_custom_name");
+        if (stored) setCustomName(stored);
+      }
+    };
+    window.addEventListener("cordilink_profile_updated", handleProfileUpdate);
+    return () => {
+      window.removeEventListener("cordilink_profile_updated", handleProfileUpdate);
+    };
+  }, []);
 
   const handleLogout = async () => {
     setLoading(true);
@@ -204,24 +231,55 @@ export default function Navbar({
 
         {/* BOTTOM SECTION: USER PROFILE & SESSION */}
         <Stack gap="xs" pt="md" style={{ borderTop: "1px solid #EEF2F4" }}>
-          {/* User Info Tile */}
-          <Group gap="sm" p={8} style={{ borderRadius: "8px", backgroundColor: "#F8FAFB" }}>
+          {/* User Info Tile (Clickable to personalize profile) */}
+          <Group
+            gap="sm"
+            p={8}
+            style={{
+              borderRadius: "10px",
+              backgroundColor: "#F8FAFB",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+            onClick={openProfile}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "rgba(2, 127, 141, 0.08)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "#F8FAFB";
+            }}
+            title="Click to personalize your profile name"
+          >
             <Avatar
               radius="xl"
               color="teal"
               size="md"
               style={{ backgroundColor: BRAND.teal, color: "#fff", fontWeight: 700 }}
             >
-              {session?.user.email?.slice(0, 2).toUpperCase() ?? "U"}
+              {(customName || session?.user.email || "U").slice(0, 2).toUpperCase()}
             </Avatar>
             <Box style={{ flex: 1, minWidth: 0 }}>
               <Text size="xs" fw={700} c={BRAND.navy} lineClamp={1}>
-                {session?.user.email ?? "Citizen"}
+                {customName || session?.user.email || "Citizen"}
               </Text>
               <Badge size="xs" variant="outline" color={role === "admin" ? "blue" : "teal"}>
                 {role === "admin" ? "Admin" : "Verified Citizen"}
               </Badge>
             </Box>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#A0AEC0"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
           </Group>
 
           <Button onClick={openLogout} color="red" variant="light" size="xs" radius="md" fullWidth>
@@ -229,6 +287,9 @@ export default function Navbar({
           </Button>
         </Stack>
       </Box>
+
+      {/* Citizen Profile & Personalization Modal */}
+      <ProfileModal opened={profileModalOpened} onClose={closeProfile} />
     </>
   );
 }

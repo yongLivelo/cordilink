@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Box,
   Card,
@@ -10,11 +10,13 @@ import {
   Button,
   Badge,
   Modal,
+  ActionIcon,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Link, Navigate } from "react-router";
 import { useAuth } from "@/context/AuthContext";
 import FaqModal from "@/components/FaqModal";
+import ProfileModal from "@/components/ProfileModal";
 
 // CordiLink Branding Palette
 const BRAND = {
@@ -35,12 +37,55 @@ export default function Home() {
   const [faqModalOpened, { open: openFaq, close: closeFaq }] =
     useDisclosure(false);
 
-  // Clean formatted user name (handles long email prefixes gracefully)
+  // Citizen Profile & Personalization Modal disclosure
+  const [profileModalOpened, { open: openProfile, close: closeProfile }] =
+    useDisclosure(false);
+
+  // Personalized citizen name state
+  const [customName, setCustomName] = useState<string>(() => {
+    return (
+      session?.user?.user_metadata?.full_name ||
+      session?.user?.user_metadata?.name ||
+      localStorage.getItem("cordilink_custom_name") ||
+      ""
+    );
+  });
+
+  // Listen for instant cross-component profile updates
+  useEffect(() => {
+    const handleProfileUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<{ name: string }>;
+      if (customEvent.detail?.name) {
+        setCustomName(customEvent.detail.name);
+      } else {
+        const stored = localStorage.getItem("cordilink_custom_name");
+        if (stored) setCustomName(stored);
+      }
+    };
+    window.addEventListener("cordilink_profile_updated", handleProfileUpdate);
+    return () => {
+      window.removeEventListener(
+        "cordilink_profile_updated",
+        handleProfileUpdate
+      );
+    };
+  }, []);
+
+  // Clean formatted user name (prioritizes personalized custom name)
   const displayName = useMemo(() => {
+    if (customName && customName.trim()) {
+      return customName.trim().toUpperCase();
+    }
+    const meta =
+      session?.user?.user_metadata?.full_name ||
+      session?.user?.user_metadata?.name;
+    if (meta && typeof meta === "string" && meta.trim()) {
+      return meta.trim().toUpperCase();
+    }
     const email = session?.user?.email;
-    if (!email) return "";
+    if (!email) return "RESIDENT";
     return email.split("@")[0].toUpperCase();
-  }, [session]);
+  }, [customName, session]);
 
   // Formatted date string
   const formattedDate = useMemo(() => {
@@ -216,20 +261,50 @@ export default function Home() {
             <Text size="sm" fw={500} c="rgba(255, 255, 255, 0.85)" mb={2}>
               {ilocanoGreeting}
             </Text>
-            <Title
-              order={1}
-              size="h1"
-              fw={900}
-              c="#ffffff"
-              lh={1.15}
-              style={{
-                fontSize: "clamp(1.5rem, 4vw, 2.25rem)",
-                letterSpacing: "-0.5px",
-                wordBreak: "break-word",
-              }}
-            >
-              {displayName}
-            </Title>
+            <Group gap="xs" align="center" wrap="wrap">
+              <Title
+                order={1}
+                size="h1"
+                fw={900}
+                c="#ffffff"
+                lh={1.15}
+                style={{
+                  fontSize: "clamp(1.5rem, 4vw, 2.25rem)",
+                  letterSpacing: "-0.5px",
+                  wordBreak: "break-word",
+                }}
+              >
+                {displayName}
+              </Title>
+              <ActionIcon
+                variant="subtle"
+                color="gray.0"
+                size="sm"
+                radius="xl"
+                onClick={openProfile}
+                title="Personalize your name"
+                aria-label="Personalize your name"
+                style={{
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                  backdropFilter: "blur(4px)",
+                }}
+              >
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+              </ActionIcon>
+            </Group>
           </Box>
 
           <Text size="sm" c="rgba(255, 255, 255, 0.88)" lh={1.5}>
@@ -538,6 +613,9 @@ export default function Home() {
 
       {/* MULTILINGUAL FAQ POPUP MODAL */}
       <FaqModal opened={faqModalOpened} onClose={closeFaq} />
+
+      {/* CITIZEN PROFILE & PERSONALIZATION MODAL */}
+      <ProfileModal opened={profileModalOpened} onClose={closeProfile} />
     </Box>
   );
 }
