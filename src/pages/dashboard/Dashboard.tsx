@@ -12,6 +12,7 @@ import {
   Badge,
   Button,
   Modal,
+  useModalsStack,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useEffect, useState, useMemo } from "react";
@@ -37,6 +38,11 @@ export default function Dashboard() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { session } = useAuth();
+
+  // Mantine Modals Stack for Delete Modal
+  const stack = useModalsStack(["delete"]);
+  const [selectedIncidentToDelete, setSelectedIncidentToDelete] =
+    useState<Incident | null>(null);
 
   // Filter, Sort, and Pagination State
   const [searchQuery, setSearchQuery] = useState("");
@@ -136,11 +142,8 @@ export default function Dashboard() {
     currentPage * ITEMS_PER_PAGE,
   );
 
-  // Handlers (Preserving 100% of the original logic)
+  // Handlers
   const handleDelete = async (incidentId: number | string) => {
-    if (!confirm("Are you sure you want to delete this incident report?"))
-      return;
-
     const { error } = await supabase
       .from("report")
       .delete()
@@ -158,6 +161,14 @@ export default function Dashboard() {
     } else {
       setIncidents((prev) => prev.filter((report) => report.id !== incidentId));
     }
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedIncidentToDelete) return;
+    const idToDelete = selectedIncidentToDelete.id;
+    stack.close("delete");
+    setSelectedIncidentToDelete(null);
+    await handleDelete(idToDelete);
   };
 
   const handleChangeStatus = async (reportId: number, newStatus: string) => {
@@ -183,7 +194,7 @@ export default function Dashboard() {
       );
     }
   };
-  const [opened, { close }] = useDisclosure();
+
   const [logoutModalOpened, { open: openLogout, close: closeLogout }] =
     useDisclosure(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -224,6 +235,56 @@ export default function Dashboard() {
         </Group>
       </Modal>
 
+      {/* DELETE CONFIRMATION MODAL (MANAGING STACK) */}
+      <Modal
+        {...stack.register("delete")}
+        title="Delete Incident Report"
+        centered
+        radius="md"
+      >
+        <Stack gap="md">
+          <Group gap="sm" align="flex-start">
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#D32F2F"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ flexShrink: 0, marginTop: 2 }}
+            >
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            <div>
+              <Text size="sm" fw={600} mb={2}>
+                Are you sure you want to delete this incident report?
+              </Text>
+              <Text size="sm" c="dimmed">
+                This action cannot be undone and will delete all associated
+                reports.
+              </Text>
+            </div>
+          </Group>
+
+          <Group justify="flex-end" gap="sm" mt="xs">
+            <Button
+              variant="default"
+              radius="md"
+              onClick={() => stack.close("delete")}
+            >
+              Cancel
+            </Button>
+            <Button color="red" radius="md" onClick={confirmDelete}>
+              Delete Incident
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
       {/* =========================================================================
           1. HEADER FOR ADMIN (Executive LGU Command Banner - Full Span, Borderless)
           ========================================================================= */}
@@ -238,12 +299,7 @@ export default function Dashboard() {
         px={{ base: "md", md: "xl", lg: 36 }}
         py={{ base: "xl", md: 36 }}
       >
-        <Group
-          justify="space-between"
-          align="flex-start"
-          wrap="wrap"
-          gap="lg"
-        >
+        <Group justify="space-between" align="flex-start" wrap="wrap" gap="lg">
           <Box
             style={{ flex: "1 1 300px" }}
             maw={{ base: "100%", lg: 740 }}
@@ -299,7 +355,13 @@ export default function Dashboard() {
               boxShadow: "0 4px 18px rgba(0, 0, 0, 0.14)",
             }}
           >
-            <Group justify="space-between" align="center" gap="md" wrap="nowrap" mb={10}>
+            <Group
+              justify="space-between"
+              align="center"
+              gap="md"
+              wrap="nowrap"
+              mb={10}
+            >
               <Box>
                 <Text
                   size="xs"
@@ -388,7 +450,10 @@ export default function Dashboard() {
         pb="xl"
         style={{ width: "100%" }}
       >
-        <SimpleGrid cols={{ base: 2, md: 4 }} spacing={{ base: "sm", md: "md" }}>
+        <SimpleGrid
+          cols={{ base: 2, md: 4 }}
+          spacing={{ base: "sm", md: "md" }}
+        >
           {/* Metric 1: Total Incidents */}
           <Card
             shadow="sm"
@@ -501,7 +566,7 @@ export default function Dashboard() {
             radius="lg"
             p={{ base: "sm", sm: "md" }}
             style={{
-              backgroundColor: "#F2F9F4",
+              backgroundColor: "#F2F4F4",
               boxShadow: "0 2px 10px rgba(43, 138, 62, 0.06)",
             }}
           >
@@ -542,30 +607,28 @@ export default function Dashboard() {
             boxShadow: "0 2px 10px rgba(0, 57, 83, 0.05)",
           }}
         >
-          <Stack gap="md">
-            <ReportsToolbar
-              title="All Incidents"
-              searchPlaceholder="Search by title, description, barangay..."
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              categories={categories}
-              selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-              selectedStatus={selectedStatusTab}
-              onStatusChange={setSelectedStatusTab}
-              statusOptions={[
-                { label: `All (${metrics.total})`, value: "all" },
-                { label: `Pending (${metrics.pending})`, value: "pending" },
-                {
-                  label: `In-Progress (${metrics.inProgress})`,
-                  value: "in-progress",
-                },
-                { label: `Resolved (${metrics.resolved})`, value: "resolved" },
-              ]}
-              sortOrder={sortOrder}
-              onSortChange={setSortOrder}
-            />
-          </Stack>
+          <ReportsToolbar
+            title="All Incidents"
+            searchPlaceholder="Search by title, description, barangay..."
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            selectedStatus={selectedStatusTab}
+            onStatusChange={setSelectedStatusTab}
+            statusOptions={[
+              { label: `All (${metrics.total})`, value: "all" },
+              { label: `Pending (${metrics.pending})`, value: "pending" },
+              {
+                label: `In-Progress (${metrics.inProgress})`,
+                value: "in-progress",
+              },
+              { label: `Resolved (${metrics.resolved})`, value: "resolved" },
+            ]}
+            sortOrder={sortOrder}
+            onSortChange={setSortOrder}
+          />
         </Card>
 
         {/* =========================================================================
@@ -587,22 +650,18 @@ export default function Dashboard() {
             <Stack gap="xl">
               <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="lg">
                 {paginatedReports.map((incidentItem) => (
-                  <>
-                    <Modal opened={opened} onClose={close}>
-                      <Button
-                        onClick={() => handleDelete(incidentItem.id)}
-                      ></Button>
-                    </Modal>
-                    <ReportCard
-                      showCommunity={true}
-                      key={incidentItem.id}
-                      report={incidentItem}
-                      onDelete={() => handleDelete(incidentItem.id)}
-                      onChangeStatus={(newStatus) => {
-                        handleChangeStatus(incidentItem.id, newStatus);
-                      }}
-                    />
-                  </>
+                  <ReportCard
+                    showCommunity={true}
+                    key={incidentItem.id}
+                    report={incidentItem}
+                    onDelete={() => {
+                      setSelectedIncidentToDelete(incidentItem);
+                      stack.open("delete");
+                    }}
+                    onChangeStatus={(newStatus) => {
+                      handleChangeStatus(incidentItem.id, newStatus);
+                    }}
+                  />
                 ))}
               </SimpleGrid>
 

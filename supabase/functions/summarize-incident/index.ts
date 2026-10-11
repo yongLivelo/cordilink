@@ -54,6 +54,7 @@ Deno.serve(async (req) => {
 
     // 4. Fetch the 5 most recent active reports connected to this incident
     // (caps what gets sent to Gemini so the summary prompt stays small)
+    //
     const { data: reports, error: fetchError } = await supabase
       .from("report")
       .select("description, image_url")
@@ -143,11 +144,15 @@ Deno.serve(async (req) => {
 
     // State C: Dropped below threshold BUT is still promoted -> Demote it
     if (reportCount < THRESHOLD && isCurrentlyPromoted) {
+      console.log(reports);
+      console.log("nigga");
+      const remainingReport = reports[0];
+      const fallbackDescription = remainingReport?.description || "";
       const { error: updateError } = await supabase
         .from("incident")
         .update({
-          title: "",
-          description: "",
+          title: null,
+          description: fallbackDescription,
           is_community_report: false,
         })
         .eq("id", incidentId);
