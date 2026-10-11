@@ -39,7 +39,6 @@ export default function ProfileModal({ opened, onClose }: ProfileModalProps) {
     if (opened) {
       const existingName =
         session?.user?.user_metadata?.name ||
-        localStorage.getItem("cordilink_custom_name") ||
         (session?.user?.email ? session.user.email.split("@")[0] : "");
 
       setDisplayName(existingName);
