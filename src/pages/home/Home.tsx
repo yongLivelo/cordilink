@@ -42,34 +42,13 @@ export default function Home() {
     useDisclosure(false);
 
   // Personalized citizen name state
-  const [customName, setCustomName] = useState<string>(() => {
-    return (
-      session?.user?.user_metadata?.full_name ||
-      session?.user?.user_metadata?.name ||
-      localStorage.getItem("cordilink_custom_name") ||
-      ""
-    );
-  });
+  const [customName, setCustomName] = useState<string>(
+    session?.user?.user_metadata?.name,
+  );
 
-  // Listen for instant cross-component profile updates
   useEffect(() => {
-    const handleProfileUpdate = (e: Event) => {
-      const customEvent = e as CustomEvent<{ name: string }>;
-      if (customEvent.detail?.name) {
-        setCustomName(customEvent.detail.name);
-      } else {
-        const stored = localStorage.getItem("cordilink_custom_name");
-        if (stored) setCustomName(stored);
-      }
-    };
-    window.addEventListener("cordilink_profile_updated", handleProfileUpdate);
-    return () => {
-      window.removeEventListener(
-        "cordilink_profile_updated",
-        handleProfileUpdate,
-      );
-    };
-  }, []);
+    setCustomName(session?.user?.user_metadata?.name);
+  }, [session]);
 
   // Clean formatted user name (prioritizes personalized custom name)
   const displayName = useMemo(() => {

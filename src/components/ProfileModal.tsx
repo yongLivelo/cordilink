@@ -28,7 +28,7 @@ interface ProfileModalProps {
 }
 
 export default function ProfileModal({ opened, onClose }: ProfileModalProps) {
-  const { session, role } = useAuth();
+  const { session, role, refreshSession } = useAuth();
 
   const [displayName, setDisplayName] = useState<string>("");
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -65,19 +65,11 @@ export default function ProfileModal({ opened, onClose }: ProfileModalProps) {
         },
       });
 
+      await refreshSession();
+
       if (updateError) {
         console.warn("Supabase user update note:", updateError.message);
       }
-
-      // 2. Cache in local storage for instant sync across tabs and reloads
-      localStorage.setItem("cordilink_custom_name", trimmed);
-
-      // 3. Dispatch window event for instant reactive UI updates
-      window.dispatchEvent(
-        new CustomEvent("cordilink_profile_updated", {
-          detail: { name: trimmed },
-        }),
-      );
 
       // 4. Show success toast notification
       notifications.show({

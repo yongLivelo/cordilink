@@ -3,6 +3,7 @@ import type { Role } from "@/types/role";
 import type { Session } from "@supabase/supabase-js";
 import { createContext, useContext, useEffect, useState } from "react";
 interface AuthContextType {
+  refreshSession: () => void;
   session: Session | null;
   loading: boolean;
   role: Role;
@@ -51,8 +52,16 @@ export default function AuthProvider({
     return () => subscription.unsubscribe();
   }, []);
 
+  const refreshSession = async () => {
+    const {
+      data: { session: updatedSession },
+    } = await supabase.auth.getSession();
+    setSession(updatedSession);
+    await fetchRole(updatedSession);
+  };
+
   return (
-    <AuthContext.Provider value={{ session, loading, role }}>
+    <AuthContext.Provider value={{ session, loading, role, refreshSession }}>
       {!loading && children}
     </AuthContext.Provider>
   );
