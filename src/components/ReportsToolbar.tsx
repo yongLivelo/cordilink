@@ -110,6 +110,7 @@ export default function ReportsToolbar({
 
       {/* Styled Interactive Category Chips */}
       <Group
+        mt={6}
         gap={6}
         align="center"
         wrap="wrap"
@@ -154,7 +155,13 @@ export default function ReportsToolbar({
       </Group>
 
       {/* Header, Status Pills, and Sort By Controls */}
-      <Group justify="space-between" align="center" wrap="wrap" gap="md" w="100%">
+      <Group
+        justify="space-between"
+        align="center"
+        wrap="wrap"
+        gap="md"
+        w="100%"
+      >
         {title && (
           <Box>
             <Title
