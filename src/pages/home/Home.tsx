@@ -126,7 +126,7 @@ export default function Home() {
       >
         <Text size="sm" mb="md" lh={1.5}>
           You are about to dial <strong>911 Emergency Services</strong> for
-          Baguio City.
+          Cordillera.
         </Text>
         <Text size="xs" c="dimmed" mb="lg">
           CordiLink is strictly for non-emergency municipal concerns. Please
@@ -292,7 +292,7 @@ export default function Home() {
           </Box>
 
           <Text size="sm" c="rgba(255, 255, 255, 0.88)" lh={1.5}>
-            Welcome to CordiLink. Empowering Baguio City residents to report
+            Welcome to CordiLink. Empowering Cordilllera residents to report
             non-emergency everyday concerns like damaged roads, fallen debris,
             and public safety hazards directly to local authorities.
           </Text>
