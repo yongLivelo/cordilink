@@ -263,7 +263,7 @@ export default function Dashboard() {
                 LGU DISPATCH
               </Badge>
               <Text size="xs" fw={700} c="rgba(255, 255, 255, 0.8)">
-                BAGUIO CITY MUNICIPAL OPERATIONS
+                CORDILLERA MUNICIPAL OPERATIONS
               </Text>
             </Group>
 
